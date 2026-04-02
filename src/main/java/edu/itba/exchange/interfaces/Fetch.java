@@ -42,7 +42,7 @@ public interface Fetch {
         Map<String, String> getHeaders();
     }
 
-    public interface Response {
+    interface Response {
         String body();
 
         int status();
