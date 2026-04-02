@@ -21,7 +21,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     private static final String API_BASE_URL = "https://api.freecurrencyapi.com";
     // This shouldn't be published (store in an application.properties)
-    private static final String API_TOKEN = "fca_live_tMQ4oYRmk8T587mrTdOFbTREYXjqCLRkXwJUS4C6";
+    private static final String API_TOKEN = "secret";
 
     @Override
     public Rate getRate(final Currency from, final Currency to) {
