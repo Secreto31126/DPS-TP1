@@ -8,10 +8,10 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class CurrencyConverter {
-	private final ExchangeRateProvider provider;
+    private final ExchangeRateProvider provider;
 
-	public Money convert(final Money money, final Currency to) {
-		final var rate = this.provider.getRate(money.currency(), to);
-		return money.convert(rate);
-	}
+    public Money convert(final Money money, final Currency to) {
+        final var rate = this.provider.getRate(money.currency(), to);
+        return money.convert(rate);
+    }
 }
