@@ -46,5 +46,7 @@ public interface Fetch {
         String body();
 
         int status();
+
+        boolean ok();
     }
 }

@@ -33,7 +33,7 @@ public class UnirestFetch implements Fetch {
         options.addHeader("Accept", "application/json");
         final var response = this.get(target, options);
 
-        if (response.status() / 100 != 2 || response.body().isBlank()) {
+        if (!response.ok() || response.body().isBlank()) {
             throw new IllegalStateException("Failed to fetch JSON");
         }
 
@@ -69,6 +69,10 @@ public class UnirestFetch implements Fetch {
     public record Response(String body, int status) implements Fetch.Response {
         protected Response(final HttpResponse<?> response) {
             this(response.getBody().toString(), response.getStatus());
+        }
+
+        public boolean ok() {
+            return this.status / 100 != 2;
         }
     }
 }
