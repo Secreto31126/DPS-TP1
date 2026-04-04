@@ -6,7 +6,6 @@ import java.util.List;
 import edu.itba.exchange.models.Rate;
 
 public interface ExchangeRateProvider {
-
     Rate getRate(final Currency from, final Currency to);
 
     List<Rate> getRate(final Currency from, final List<Currency> to);

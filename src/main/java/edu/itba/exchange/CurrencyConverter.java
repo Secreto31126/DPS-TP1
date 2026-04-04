@@ -18,7 +18,7 @@ public class CurrencyConverter {
             return new ConversionResult.Success(money.convert(rate), rate);
         } catch (final Exception e) {
             return new ConversionResult.Failure(e.getMessage());
-        } 
+        }
     }
 
     public List<ConversionResult> convert(final Money money, final List<Currency> to) {
