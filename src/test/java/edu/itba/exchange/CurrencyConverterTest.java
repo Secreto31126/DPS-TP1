@@ -53,6 +53,6 @@ class CurrencyConverterTest {
 		final var result = converter.convert(euros, USD);
 
 		// Then
-		assertThat(result, is(dolars));
+		assertThat(result, is(new ConversionResult.Success(dolars, EUR_USD_RATE)));
 	}
 }
