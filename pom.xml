@@ -13,15 +13,23 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>25</maven.compiler.release>
-        <junit.version>5.12.0</junit.version>
-        <log4j.version>2.25.3</log4j.version>
-        <lombok.version>1.18.38</lombok.version>
-        <gson.version>2.11.0</gson.version>
-        <unirest.version>1.4.9</unirest.version>
-        <mockito.version>5.23.0</mockito.version>
-        <hamcrest.version>3.0</hamcrest.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+
+        <!-- Dependecies -->
+        <com.mashape.unirest.version>1.4.9</com.mashape.unirest.version>
+        <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
+
+        <!-- Utilities -->
+        <org.projectlombok.version>1.18.44</org.projectlombok.version>
+        <org.apache.logging.log4j.version>2.25.4</org.apache.logging.log4j.version>
+
+        <!-- Testing -->
+        <org.junit.jupiter.version>6.0.3</org.junit.jupiter.version>
+        <org.mockito.version>5.23.0</org.mockito.version>
+        <org.hamcrest.version>3.0</org.hamcrest.version>
+
+        <!-- Plugins -->
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
     </properties>
 
     <repositories>
@@ -38,60 +46,69 @@
     </repositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>${gson.version}</version>
-		</dependency>
+        <!-- Dependecies -->
 		<dependency>
 			<groupId>com.mashape.unirest</groupId>
 			<artifactId>unirest-java</artifactId>
-			<version>${unirest.version}</version>
+			<version>${com.mashape.unirest.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${com.google.code.gson.version}</version>
+		</dependency>
+
+        <!-- Utilities -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>${lombok.version}</version>
+			<version>${org.projectlombok.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency>
+
+        <!-- Testing -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>${junit.version}</version>
+			<version>${org.junit.jupiter.version}</version>
             <scope>test</scope>
 		</dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-			<version>${junit.version}</version>
+			<version>${org.junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
+
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>${mockito.version}</version>
+			<version>${org.mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-			<version>${mockito.version}</version>
+			<version>${org.mockito.version}</version>
             <scope>test</scope>
         </dependency>
+
 		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest</artifactId>
-			<version>${hamcrest.version}</version>
+			<version>${org.hamcrest.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -108,7 +125,7 @@
                             <path>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
+                                <version>${org.projectlombok.version}</version>
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
@@ -119,9 +136,8 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>
-                            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
+                            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${org.mockito.version}/mockito-core-${org.mockito.version}.jar
                             -Xshare:off
-                            -Dnet.bytebuddy.experimental=true
                         </argLine>
                     </configuration>
                 </plugin>
