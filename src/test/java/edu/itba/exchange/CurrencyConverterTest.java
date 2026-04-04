@@ -1,16 +1,5 @@
 package edu.itba.exchange;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import edu.itba.exchange.interfaces.ExchangeRateProvider;
-import edu.itba.exchange.models.Money;
-import edu.itba.exchange.models.Rate;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
@@ -18,6 +7,15 @@ import static org.mockito.Mockito.when;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Currency;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import edu.itba.exchange.interfaces.ExchangeRateProvider;
+import edu.itba.exchange.models.Money;
+import edu.itba.exchange.models.Rate;
 
 @ExtendWith(MockitoExtension.class)
 class CurrencyConverterTest {
