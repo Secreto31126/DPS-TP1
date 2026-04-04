@@ -79,7 +79,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
     
     private URL getUrl(final String path, Map<String, String> query) {
-        final List<NameValuePair> queryParams = query
+        final var queryParams = query
             .entrySet()
             .stream()
             .map(
