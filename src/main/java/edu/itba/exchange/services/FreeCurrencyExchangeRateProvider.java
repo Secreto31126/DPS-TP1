@@ -2,53 +2,155 @@ package edu.itba.exchange.services;
 
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Currency;
+import java.util.List;
 import java.util.Map;
-
+import java.time.LocalDate;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.message.BasicNameValuePair;
 
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
+import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.exceptions.ExternalServiceException;
+import edu.itba.exchange.exceptions.CurrencyNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @AllArgsConstructor
 public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private final Fetch fetch;
-
-    private static final String API_BASE_URL = "https://api.freecurrencyapi.com";
-    // This shouldn't be published (store in an application.properties)
-    private static final String API_TOKEN = "secret";
+    private final PropertiesProvider propertiesProvider;
 
     @Override
     public Rate getRate(final Currency from, final Currency to) {
-        final var url = this.getUrl(from, to);
-        final var options = this.getOptions();
-        final var response = (ExchangeRateResponse) fetch.getJson(url, options, ExchangeRateResponse.class);
-        return new Rate(from, to, response.getData().get(to.getCurrencyCode()));
+        return getRate(from, List.of(to)).getFirst();
     }
 
-    private URL getUrl(final Currency from, final Currency to) {
+    @Override
+    public List<Rate> getRate(final Currency from, final List<Currency> to) {
+        final var url = this.getLatestCurrencyUrl(from, to);
+        final var options = this.getOptions();
+        final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+        final var ratesBySymbol = response.getData();
+
+        return ratesBySymbol
+                .entrySet()
+                .stream()
+                .map(entry -> 
+                    new Rate(
+                        from,
+                        Currency.getInstance(entry.getKey()),
+                        entry.getValue().toString()
+                    )
+                )
+                .toList();
+    }
+    @Override
+    public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
+        return null;
+    }
+    @Override
+    public List<Currency> getAvailableCurrencies() {
+        return getAvailableCurrencies(List.of());
+    }
+
+    @Override
+    public List<Currency> getAvailableCurrencies(final List<String> currencyCodes) {
         try {
-            return new URIBuilder(FreeCurrencyExchangeRateProvider.API_BASE_URL)
-                    .setPath("/v1/latest")
+            final var query = Map.of("currencies", String.join(",",currencyCodes));
+            final var url = this.getUrl("/currencies", query);
+            final var options = this.getOptions();
+            final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
+            final var availableCurrencies = response.getData();
+
+            return availableCurrencies
+            .entrySet()
+            .stream()
+            .map(entry -> Currency.getInstance(entry.getKey()))
+            .toList();
+        } catch (final IllegalArgumentException e) {
+            throw new CurrencyNotFoundException(e.getMessage());
+        }
+    }
+    
+    private URL getUrl(final String path, Map<String, String> query) {
+        final List<NameValuePair> queryParams = query
+            .entrySet()
+            .stream()
+            .map(
+                entry -> new BasicNameValuePair(entry.getKey(), entry.getValue())
+            )
+            .toList();
+        try {
+            return this.getUriBuilder(path)
+                .addParameters(queryParams)
+                .build().toURL();
+        } catch (final MalformedURLException | URISyntaxException e) {
+            throw new ExternalServiceException("Internal error building API URL");
+        }
+    }
+
+    private URL getLatestCurrencyUrl(final Currency from, final List<Currency> to) {
+        final var currencyCurrencyCodes = to.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", currencyCurrencyCodes);
+
+        try {
+            return this.getUriBuilder("/v1/latest")
                     .addParameter("base_currency", from.getCurrencyCode())
-                    .addParameter("currencies", to.getCurrencyCode())
+                    .addParameter("currencies", currencies)
                     .build().toURL();
-        } catch (final URISyntaxException | MalformedURLException e) {
+        } catch (final MalformedURLException | URISyntaxException e) {
+            throw new ExternalServiceException("Internal error building API URL");
+        }
+    }
+
+    private URIBuilder getUriBuilder(final String path) {
+        try {
+            return new URIBuilder(this.getApiBaseUrl()).setPath(path);
+        } catch (final URISyntaxException e) {
             throw new RuntimeException("Internal error building API URL");
         }
     }
 
+    private String getApiBaseUrl() {
+        return this.propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_BASE_URL");
+    }
+
+    private String getApiToken() {
+        return this.propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_TOKEN");
+    }
+
     private Fetch.Options getOptions() {
-        return fetch.getOptions().addHeader("apikey", FreeCurrencyExchangeRateProvider.API_TOKEN);
+        return this.fetch.getOptions().addHeader("apikey", this.getApiToken());
     }
 
     @Data
     public class ExchangeRateResponse {
         private Map<String, BigDecimal> data;
+    }
+
+    @Data
+    public class ExchangeCurrenciesResponse {
+        private Map<String, ExchangeCurrencyData> data;
+
+        public record ExchangeCurrencyData(String symbol, String name, String symbol_native, long decimal_digits,
+                long rounding, String code, String name_plural) {
+            public String symbolNative() {
+                return this.symbol_native;
+            }
+
+            public long decimalDigits() {
+                return this.decimal_digits;
+            }
+
+            public String namePlural() {
+                return this.name_plural;
+            }
+        }
     }
 }
