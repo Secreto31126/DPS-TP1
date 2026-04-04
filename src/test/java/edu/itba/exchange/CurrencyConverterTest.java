@@ -2,7 +2,10 @@ package edu.itba.exchange;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.models.Money;
@@ -16,7 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Currency;
 
-@TestInstance(Lifecycle.PER_CLASS)
+@ExtendWith(MockitoExtension.class)
 class CurrencyConverterTest {
 	@Mock
 	private ExchangeRateProvider provider;
@@ -24,20 +27,6 @@ class CurrencyConverterTest {
 	private static final Currency USD = Currency.getInstance("USD");
 	private static final Currency EUR = Currency.getInstance("EUR");
 	private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
-
-	private AutoCloseable closeable;
-
-	@BeforeAll
-	public void openMocks() {
-		closeable = MockitoAnnotations.openMocks(this);
-	}
-
-	@AfterAll
-	public void releaseMocks() throws Exception {
-		if (closeable != null) {
-			closeable.close();
-		}
-	}
 
 	@Test
 	void testConvert() throws MalformedURLException, URISyntaxException {
