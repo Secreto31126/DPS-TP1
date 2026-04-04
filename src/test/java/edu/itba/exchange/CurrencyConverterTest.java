@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Currency;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,8 @@ class CurrencyConverterTest {
 
 	private static final Currency USD = Currency.getInstance("USD");
 	private static final Currency EUR = Currency.getInstance("EUR");
+	private static final Currency CAD = Currency.getInstance("CAD");
+
 	private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
 
 	@Test
@@ -41,5 +44,38 @@ class CurrencyConverterTest {
 
 		// Then
 		assertThat(result, is(new ConversionResult.Success(dolars, EUR_USD_RATE)));
+	}
+
+	@Test
+	void testGetAvailableCurrencies() {
+		// Given
+		final var CURRENCIES_LIST = List.of(USD, EUR, CAD);
+
+		when(this.provider.getAvailableCurrencies(List.of())).thenReturn(CURRENCIES_LIST);
+
+		final var converter = new CurrencyConverter(provider);
+
+		// When
+		final var result = converter.getAvailableCurrencies();
+
+		// Then
+		assertThat(result, is(new AvailableCurrenciesResult.Success(CURRENCIES_LIST)));
+	}
+
+	@Test
+	void testGetSpecificCurrencies() {
+		// Given
+		final var CURRENCIES_LIST = List.of(USD, EUR);
+		final var CURRENCY_CODES_LIST = List.of("USD", "EUR");
+
+		when(this.provider.getAvailableCurrencies(CURRENCY_CODES_LIST)).thenReturn(CURRENCIES_LIST);
+
+		final var converter = new CurrencyConverter(provider);
+
+		// When
+		final var result = converter.getAvailableCurrencies(CURRENCY_CODES_LIST);
+
+		// Then
+		assertThat(result, is(new AvailableCurrenciesResult.Success(CURRENCIES_LIST)));
 	}
 }
