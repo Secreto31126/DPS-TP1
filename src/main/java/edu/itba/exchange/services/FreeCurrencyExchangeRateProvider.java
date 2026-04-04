@@ -82,16 +82,6 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
     }
 
-    private URL getUrl(final String path, final BasicNameValuePair... query) {
-        try {
-            return this.getUriBuilder(path)
-                    .setParameters(query)
-                    .build().toURL();
-        } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ExternalServiceException("Internal error building API URL");
-        }
-    }
-
     private URL getLatestRatesUrl(final Currency from, final List<Currency> to) {
         final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
         final var currencies = String.join(",", currencyCodesList);
@@ -101,7 +91,17 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                 new BasicNameValuePair("currencies", currencies));
     }
 
-    private URIBuilder getUriBuilder(final String path) {
+    private URL getUrl(final String path, final BasicNameValuePair... query) {
+        try {
+            return this.getApiUriBuilder(path)
+                    .setParameters(query)
+                    .build().toURL();
+        } catch (final MalformedURLException | URISyntaxException e) {
+            throw new ExternalServiceException("Internal error building API URL");
+        }
+    }
+
+    private URIBuilder getApiUriBuilder(final String path) {
         try {
             return new URIBuilder(this.getApiBaseUrl()).setPath(path);
         } catch (final URISyntaxException e) {
