@@ -47,8 +47,18 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
-        // TODO: Todo
-        return null;
+        try {
+            final var url = this.getRatesUrlForDate(from, to, rateDate);
+            final var options = this.getOptions();
+
+            final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+
+            return response.getData().entrySet().stream()
+                    .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
+                    .toList();
+        } catch (Exception e) {
+            throw new ExternalServiceException(e.getMessage());
+        }
     }
 
     @Override
@@ -81,6 +91,16 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         return this.getUrl("/v1/latest",
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies));
+    }
+
+    private URL getRatesUrlForDate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
+        final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", currencyCodesList);
+
+        return this.getUrl("/v1/historical",
+                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
+                new BasicNameValuePair("currencies", currencies),
+                new BasicNameValuePair("rate_date", rateDate.toString()));
     }
 
     private URL getUrl(final String path, final BasicNameValuePair... query) {
