@@ -2,13 +2,14 @@ package edu.itba.exchange.services;
 
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDate;
+
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -62,9 +63,11 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     @Override
     public List<Currency> getAvailableCurrencies(final List<String> currencyCodes) {
         try {
-            final var query = Map.of("currencies", String.join(",",currencyCodes));
-            final var url = this.getUrl("/currencies", query);
+            final var currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
+
+            final var url = this.getUrl("/currencies", currencies);
             final var options = this.getOptions();
+
             final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
             final var availableCurrencies = response.getData();
 
@@ -77,36 +80,24 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
             throw new CurrencyNotFoundException(e.getMessage());
         }
     }
-    
-    private URL getUrl(final String path, Map<String, String> query) {
-        final var queryParams = query
-            .entrySet()
-            .stream()
-            .map(
-                entry -> new BasicNameValuePair(entry.getKey(), entry.getValue())
-            )
-            .toList();
+
+    private URL getUrl(final String path, final BasicNameValuePair... query) {
         try {
             return this.getUriBuilder(path)
-                .addParameters(queryParams)
-                .build().toURL();
+                    .setParameters(query)
+                    .build().toURL();
         } catch (final MalformedURLException | URISyntaxException e) {
             throw new ExternalServiceException("Internal error building API URL");
         }
     }
 
     private URL getLatestCurrencyUrl(final Currency from, final List<Currency> to) {
-        final var currencyCurrencyCodes = to.stream().map(Currency::getCurrencyCode).toList();
-        final var currencies = String.join(",", currencyCurrencyCodes);
+        final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", currencyCodesList);
 
-        try {
-            return this.getUriBuilder("/v1/latest")
-                    .addParameter("base_currency", from.getCurrencyCode())
-                    .addParameter("currencies", currencies)
-                    .build().toURL();
-        } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ExternalServiceException("Internal error building API URL");
-        }
+        return this.getUrl("/v1/latest",
+                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
+                new BasicNameValuePair("currencies", currencies));
     }
 
     private URIBuilder getUriBuilder(final String path) {
