@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -88,7 +89,8 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
         return this.getUrl("/v1/latest",
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
-                new BasicNameValuePair("currencies", currencies));
+                new BasicNameValuePair("currencies", currencies)
+        );
     }
 
     private URL getRatesUrlForDate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
@@ -98,13 +100,15 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         return this.getUrl("/v1/historical",
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
-                new BasicNameValuePair("rate_date", rateDate.toString()));
+                new BasicNameValuePair("rate_date", rateDate.toString())
+        );
     }
 
-    private URL getUrl(final String path, final BasicNameValuePair... query) {
+    private URL getUrl(final String path, final NameValuePair... query) {
+        final var filteredQuery = Arrays.stream(query).filter(pairs -> !pairs.getValue().isBlank()).toList();
         try {
             return this.getApiUriBuilder(path)
-                    .setParameters(query)
+                    .setParameters(filteredQuery)
                     .build().toURL();
         } catch (final MalformedURLException | URISyntaxException e) {
             throw new ExternalServiceException("Internal error building API URL");

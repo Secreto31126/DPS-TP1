@@ -29,7 +29,8 @@ public class CurrencyConverter {
     }
 
     public AvailableCurrenciesResult getAvailableCurrencies() {
-        return this.getAvailableCurrencies(List.of());
+        final var currencies = this.provider.getAvailableCurrencies();
+        return new AvailableCurrenciesResult.Success(currencies);
     }
 
     public AvailableCurrenciesResult getAvailableCurrencies(final List<String> currencyCodes) {
