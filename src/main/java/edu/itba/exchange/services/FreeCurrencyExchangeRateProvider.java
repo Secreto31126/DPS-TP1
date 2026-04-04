@@ -69,13 +69,10 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
             final var options = this.getOptions();
 
             final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
-            final var availableCurrencies = response.getData();
 
-            return availableCurrencies
-            .entrySet()
-            .stream()
-            .map(entry -> Currency.getInstance(entry.getKey()))
-            .toList();
+            return response.getData().keySet().stream()
+                    .map(Currency::getInstance)
+                    .toList();
         } catch (final IllegalArgumentException e) {
             throw new CurrencyNotFoundException(e.getMessage());
         }
