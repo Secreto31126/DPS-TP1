@@ -13,12 +13,13 @@ import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
+import edu.itba.exchange.exceptions.CurrencyNotFoundException;
+import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
-import edu.itba.exchange.exceptions.ExternalServiceException;
-import edu.itba.exchange.exceptions.CurrencyNotFoundException;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -29,12 +30,12 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public Rate getRate(final Currency from, final Currency to) {
-        return getRate(from, List.of(to)).getFirst();
+        return this.getRate(from, List.of(to)).getFirst();
     }
 
     @Override
     public List<Rate> getRate(final Currency from, final List<Currency> to) {
-        final var url = this.getLatestCurrencyUrl(from, to);
+        final var url = this.getLatestRatesUrl(from, to);
         final var options = this.getOptions();
         final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
         final var ratesBySymbol = response.getData();
@@ -51,10 +52,13 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                 )
                 .toList();
     }
+
     @Override
     public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
+        // TODO: Todo
         return null;
     }
+
     @Override
     public List<Currency> getAvailableCurrencies() {
         return getAvailableCurrencies(List.of());
@@ -88,7 +92,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
     }
 
-    private URL getLatestCurrencyUrl(final Currency from, final List<Currency> to) {
+    private URL getLatestRatesUrl(final Currency from, final List<Currency> to) {
         final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
         final var currencies = String.join(",", currencyCodesList);
 
