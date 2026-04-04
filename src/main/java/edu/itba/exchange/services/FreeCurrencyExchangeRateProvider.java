@@ -37,19 +37,11 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     public List<Rate> getRate(final Currency from, final List<Currency> to) {
         final var url = this.getLatestRatesUrl(from, to);
         final var options = this.getOptions();
-        final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
-        final var ratesBySymbol = response.getData();
 
-        return ratesBySymbol
-                .entrySet()
-                .stream()
-                .map(entry -> 
-                    new Rate(
-                        from,
-                        Currency.getInstance(entry.getKey()),
-                        entry.getValue().toString()
-                    )
-                )
+        final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+
+        return response.getData().entrySet().stream()
+                .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
                 .toList();
     }
 
