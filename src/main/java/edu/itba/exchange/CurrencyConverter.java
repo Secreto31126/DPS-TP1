@@ -3,6 +3,7 @@ package edu.itba.exchange;
 import java.util.Currency;
 import java.util.List;
 
+import edu.itba.exchange.exceptions.CurrencyNotFoundException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.models.Money;
 import lombok.AllArgsConstructor;
@@ -25,5 +26,18 @@ public class CurrencyConverter {
         return to.stream()
                 .map(currency -> this.convert(money, currency))
                 .toList();
+    }
+
+    public AvailableCurrenciesResult getAvailableCurrencies() {
+        return this.getAvailableCurrencies(List.of());
+    }
+
+    public AvailableCurrenciesResult getAvailableCurrencies(final List<String> currencyCodes) {
+        try {
+            final var currencies = this.provider.getAvailableCurrencies(currencyCodes);
+            return new AvailableCurrenciesResult.Success(currencies);
+        } catch (final CurrencyNotFoundException e) {
+            return new AvailableCurrenciesResult.Failure(e.getMessage());
+        }
     }
 }
