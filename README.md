@@ -8,7 +8,7 @@
 
 - [x] Cómo usuario, quiero poder convertir desde el mismo monto y moneda a más de una moneda a la vez. e.g. (100 USD, [EUR, JPY]) para así tener visibilidad completa de la conversión de una moneda a múltiples.
 
-- [ ] Cómo usuario, quiero ver la cotización para una fecha pasada de una o más monedas por un cierto monto para poder visualizar el histórico de cotizaciones. e.g. (100 USD, [EUR, JPY], 2024-11-20)
+- [x] Cómo usuario, quiero ver la cotización para una fecha pasada de una o más monedas por un cierto monto para poder visualizar el histórico de cotizaciones. e.g. (100 USD, [EUR, JPY], 2024-11-20)
 
 - [ ] Cómo usuario, quiero poder ver la cotización usada para cada moneda en la respuesta de mi solicitud de conversión, para así verificar y comparar las cotizaciones.
 

@@ -6,7 +6,9 @@ import static org.mockito.Mockito.when;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.Currency;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +34,7 @@ class CurrencyConverterTest {
 		final var euros = new Money("100", EUR);
 		final var dolars = new Money("105.00", USD);
 
-		when(this.provider.getRate(EUR, USD)).thenReturn(EUR_USD_RATE);
+		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
 
 		final var converter = new CurrencyConverter(provider);
 
@@ -41,5 +43,24 @@ class CurrencyConverterTest {
 
 		// Then
 		assertThat(result, is(new ConversionResult.Success(dolars, EUR_USD_RATE)));
+	}
+
+	@Test
+	void testHistoricalConvert() {
+		// Given
+		final var euros = new Money("100", EUR);
+		final var date = LocalDate.of(2024, 1, 1);
+		final var historicalRate = new Rate(EUR, USD, "1.10", date);
+		final var dollars = new Money("110.00", USD);
+
+		when(this.provider.getRate(EUR, List.of(USD), date)).thenReturn(List.of(historicalRate));
+
+		final var converter = new CurrencyConverter(provider);
+
+		// When
+		final var result = converter.convert(euros, USD, date);
+
+		// Then
+		assertThat(result, is(new ConversionResult.Success(dollars, historicalRate)));
 	}
 }
