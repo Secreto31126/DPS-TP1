@@ -4,11 +4,14 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.mashape.unirest.request.HttpRequest;
 
+import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import lombok.AllArgsConstructor;
@@ -20,12 +23,7 @@ public class UnirestFetch implements Fetch {
 
     @Override
     public Fetch.Response get(final URL target, final Options options) {
-        try {
-            final var response = Unirest.get(target.toString()).headers(options.getHeaders()).asJson();
-            return new Response(response);
-        } catch (UnirestException e) {
-            throw new RuntimeException("Failed to get");
-        }
+        return this.fetchRequest(target, options, Unirest::get);
     }
 
     @Override
@@ -42,12 +40,7 @@ public class UnirestFetch implements Fetch {
 
     @Override
     public Fetch.Response post(final URL target, final Options options) {
-        try {
-            final var response = Unirest.post(target.toString()).headers(options.getHeaders()).asJson();
-            return new Response(response);
-        } catch (UnirestException e) {
-            throw new RuntimeException("Failed to post");
-        }
+        return this.fetchRequest(target,options,Unirest::post);
     }
 
     @Override
@@ -55,6 +48,15 @@ public class UnirestFetch implements Fetch {
         return new UnirestOptions();
     }
 
+    private Fetch.Response fetchRequest(final URL target, final Options options, final Function<String,? extends HttpRequest> request){
+    try {
+        final var response = request.apply(target.toString()).headers(options.getHeaders());
+        return new Response(response.asString());
+
+    } catch (UnirestException e) {
+        throw new ExternalServiceException(e.getMessage());
+    }
+    }
     @Getter
     public class UnirestOptions implements Fetch.Options {
         private final Map<String, String> headers = new HashMap<>();
