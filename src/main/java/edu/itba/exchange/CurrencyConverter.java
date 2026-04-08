@@ -2,13 +2,14 @@ package edu.itba.exchange;
 
 import java.util.Currency;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 import java.time.LocalDate;
 
+import edu.itba.exchange.exceptions.CurrencyException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.models.Money;
+import edu.itba.exchange.models.Rate;
 import lombok.AllArgsConstructor;
-import edu.itba.exchange.ConversionResult.*;
 
 @AllArgsConstructor
 public class CurrencyConverter {
@@ -22,7 +23,7 @@ public class CurrencyConverter {
         try {
             final var currencies = this.provider.getAvailableCurrencies(currencyCodes);
             return new AvailableCurrenciesResult.Success(currencies);
-        } catch (final Exception e) {
+        } catch (final CurrencyException e) {
             return new AvailableCurrenciesResult.Failure(e.getMessage());
         }
     }
@@ -41,12 +42,10 @@ public class CurrencyConverter {
 
     public List<ConversionResult> convert(final Money money, final List<Currency> to, final LocalDate date) {
         try {
-            final var rates = date == null ? this.provider.getRate(money.currency(), to) : this.provider.getRate(money.currency(), to, date);
-            return rates.stream().map(rate -> new ConversionResult.Success(money.convert(rate), rate)).collect(Collectors.toUnmodifiableList());
-        } catch (final Exception e) {
-            return List.of(
-                new ConversionResult.Failure(e.getMessage())
-            );
+            return this.collectProviderResult(money.currency(), to, date, rate -> new ConversionResult.Success(money.convert(rate), rate));
+        }
+        catch (final CurrencyException e){
+            return List.of(new ConversionResult.Failure(e.getMessage()));
         }
     }
 
@@ -54,7 +53,7 @@ public class CurrencyConverter {
         return this.getExchangeRate(from, List.of(to)).getFirst();
     }
 
-    public ExchangeRateResult getExchangeRate(final Currency from, final Currency to, final java.time.LocalDate date) {
+    public ExchangeRateResult getExchangeRate(final Currency from, final Currency to, final LocalDate date) {
         return this.getExchangeRate(from, List.of(to), date).getFirst();
     }
 
@@ -62,14 +61,15 @@ public class CurrencyConverter {
         return this.getExchangeRate(from, to, null);
     }
 
-    public List<ExchangeRateResult> getExchangeRate(final Currency from, final List<Currency> to, final java.time.LocalDate date) {
+    public List<ExchangeRateResult> getExchangeRate(final Currency from, final List<Currency> to, final LocalDate date) {
         try {
-            final var rates = date == null ? this.provider.getRate(from, to) : this.provider.getRate(from, to, date);
-            return rates.stream().map(ExchangeRateResult.Success::new).collect(Collectors.toUnmodifiableList());
-        } catch (final Exception e) {
-            return List.of(
-                new ExchangeRateResult.Failure(e.getMessage())
-            );
+            return this.collectProviderResult(from, to, date, ExchangeRateResult.Success::new);
+        } catch (CurrencyException e) {
+            return List.of(new ExchangeRateResult.Failure(e.getMessage()));
         }
+    }
+    private <E> List<E> collectProviderResult(final Currency from, final List<Currency> to, final LocalDate date, Function<Rate, E> mapper){
+        final var rates = date==null ? this.provider.getRate(from,to): this.provider.getRate(from, to, date);
+        return rates.stream().map(mapper).toList();
     }
 }
