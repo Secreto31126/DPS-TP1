@@ -55,20 +55,18 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
     }
 
-    private List<Rate> formRateResponse(final Currency from, final List<Currency> to, final LocalDate rateDate){
+    private List<Rate> formRateResponse(final Currency from, final List<Currency> to, final LocalDate rateDate) {
         final var url = this.buildRateUrl(from, to, rateDate);
-
         final var options = this.getOptions();
 
         final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+
         return response.getData().entrySet().stream()
                 .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-
-
-    private List<Currency> formCurrencyResponse(final List<String> currencyCodes){
+    private List<Currency> formCurrencyResponse(final List<String> currencyCodes) {
         try {
             final var url = this.buildCurrenciesUrl(currencyCodes);
             final var options = this.getOptions();
@@ -83,35 +81,43 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
     }
 
-    private URL buildCurrenciesUrl(final List<String> currencyCodes){
-        NameValuePair currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
-        return this.getUrl("/currencies",List.of(currencies));
+    private URL buildCurrenciesUrl(final List<String> currencyCodes) {
+        final var currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
+        return this.getUrl("/currencies", List.of(currencies));
     }
 
-    private URL buildRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate){
+    private URL buildRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
         final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
         final var currencies = String.join(",", currencyCodesList);
-        return rateDate!=null ? buildHistoricalRateUrl(from,currencies,rateDate) : this.buildLatestRateUrl(from, currencies);
+
+        return rateDate != null
+                ? this.buildHistoricalRateUrl(from, currencies, rateDate)
+                : this.buildLatestRateUrl(from, currencies);
     }
 
-    private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate){
-        final var path="/v1/historical";
-        final List<NameValuePair> queries= List.of(
+    private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate) {
+        final var path = "/v1/historical";
+        final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
-                new BasicNameValuePair("rate_date", rateDate.toString())
-        );
-        return this.getUrl(path,queries);
+                new BasicNameValuePair("rate_date", rateDate.toString()));
+
+        return this.getUrl(path, queries);
     }
-    private URL buildLatestRateUrl(final Currency from, final String currencies){
-        final var path="/v1/latest";
-        final List<NameValuePair> queries = List.of(new BasicNameValuePair("base_currency", from.getCurrencyCode()), new BasicNameValuePair("currencies", currencies));
-        return this.getUrl(path,queries);
+
+    private URL buildLatestRateUrl(final Currency from, final String currencies) {
+        final var path = "/v1/latest";
+        final List<NameValuePair> queries = List.of(
+                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
+                new BasicNameValuePair("currencies", currencies));
+
+        return this.getUrl(path, queries);
     }
 
     private URL getUrl(final String path, final List<NameValuePair> query) {
-        final var filteredQuery =query.stream().filter(pairs -> !pairs.getValue().isBlank()).toList();
         try {
+            final var filteredQuery = query.stream().filter(pairs -> !pairs.getValue().isBlank()).toList();
+
             return new URIBuilder(this.getApiBaseUrl())
                     .setPath(path)
                     .setParameters(filteredQuery)
