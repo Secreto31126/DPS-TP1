@@ -33,20 +33,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public List<Currency> getAvailableCurrencies(final List<String> currencyCodes) {
-        try {
-            final var currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
-
-            final var url = this.getUrl("/currencies", currencies);
-            final var options = this.getOptions();
-
-            final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
-
-            return response.getData().keySet().stream()
-                    .map(Currency::getInstance)
-                    .toList();
-        } catch (final IllegalArgumentException e) {
-            throw new CurrencyNotFoundException(e.getMessage());
-        }
+        return this.formCurrencyResponse(currencyCodes);
     }
 
     @Override
@@ -69,7 +56,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     private List<Rate> formRateResponse(final Currency from, final List<Currency> to, final LocalDate rateDate){
-        final var url = this.getUrl(from, to, rateDate);
+        final var url = this.buildRateUrl(from, to, rateDate);
 
         final var options = this.getOptions();
 
@@ -79,33 +66,51 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                 .toList();
     }
 
-    private URL getUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
-        return rateDate != null ? this.getHistoricalRatesUrl(from, to, rateDate) : this.getLatestRatesUrl(from, to);
+
+
+    private List<Currency> formCurrencyResponse(final List<String> currencyCodes){
+        try {
+            final var url = this.buildCurrenciesUrl(currencyCodes);
+            final var options = this.getOptions();
+
+            final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
+
+            return response.getData().keySet().stream()
+                    .map(Currency::getInstance)
+                    .toList();
+        } catch (final IllegalArgumentException e) {
+            throw new CurrencyNotFoundException(e.getMessage());
+        }
     }
 
-    private URL getLatestRatesUrl(final Currency from, final List<Currency> to) {
-        final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
-        final var currencies = String.join(",", currencyCodesList);
-
-        return this.getUrl("/v1/latest",
-                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
-                new BasicNameValuePair("currencies", currencies)
-        );
+    private URL buildCurrenciesUrl(final List<String> currencyCodes){
+        NameValuePair currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
+        return this.getUrl("/currencies",List.of(currencies));
     }
 
-    private URL getHistoricalRatesUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
+    private URL buildRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate){
         final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
         final var currencies = String.join(",", currencyCodesList);
+        return rateDate!=null ? buildHistoricalRateUrl(from,currencies,rateDate) : this.buildLatestRateUrl(from, currencies);
+    }
 
-        return this.getUrl("/v1/historical",
+    private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate){
+        final var path="/v1/historical";
+        final List<NameValuePair> queries= List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
                 new BasicNameValuePair("rate_date", rateDate.toString())
         );
+        return this.getUrl(path,queries);
+    }
+    private URL buildLatestRateUrl(final Currency from, final String currencies){
+        final var path="/v1/latest";
+        final List<NameValuePair> queries = List.of(new BasicNameValuePair("base_currency", from.getCurrencyCode()), new BasicNameValuePair("currencies", currencies));
+        return this.getUrl(path,queries);
     }
 
-    private URL getUrl(final String path, final NameValuePair... query) {
-        final var filteredQuery = Arrays.stream(query).filter(pairs -> !pairs.getValue().isBlank()).toList();
+    private URL getUrl(final String path, final List<NameValuePair> query) {
+        final var filteredQuery =query.stream().filter(pairs -> !pairs.getValue().isBlank()).toList();
         try {
             return new URIBuilder(this.getApiBaseUrl())
                     .setPath(path)
