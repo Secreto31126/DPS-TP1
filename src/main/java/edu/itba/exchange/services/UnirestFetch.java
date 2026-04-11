@@ -74,7 +74,7 @@ public class UnirestFetch implements Fetch {
         }
 
         public boolean ok() {
-            return this.status / 100 != 2;
+            return this.status / 100 == 2;
         }
     }
 }

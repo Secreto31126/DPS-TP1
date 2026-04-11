@@ -83,7 +83,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     private URL buildCurrenciesUrl(final List<String> currencyCodes) {
         final var currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
-        return this.getUrl("/currencies", List.of(currencies));
+        return this.getUrl("/v1/currencies", List.of(currencies));
     }
 
     private URL buildRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
@@ -96,7 +96,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate) {
-        final var path = "/historical";
+        final var path = "/v1/historical";
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
@@ -106,7 +106,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     private URL buildLatestRateUrl(final Currency from, final String currencies) {
-        final var path = "/latest";
+        final var path = "/v1/latest";
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies));
