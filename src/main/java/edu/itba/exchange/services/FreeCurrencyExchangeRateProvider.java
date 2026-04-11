@@ -59,11 +59,21 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         final var url = this.buildRateUrl(from, to, rateDate);
         final var options = this.getOptions();
 
-        final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+        if (rateDate != null) {
+            final HistoricalExchangeRateResponse response = fetch.getJson(url, options, HistoricalExchangeRateResponse.class);
 
-        return response.getData().entrySet().stream()
-                .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
-                .toList();
+            final Map<String, BigDecimal> dailyRates = response.getData().getOrDefault(rateDate.toString(), Map.of());
+
+            return dailyRates.entrySet().stream()
+                    .map(entry -> new Rate(from, Currency.getInstance(entry.getKey()), entry.getValue()))
+                    .toList();
+        } else {
+            final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
+
+            return response.getData().entrySet().stream()
+                    .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
+                    .toList();
+        }
     }
 
     private List<Currency> formCurrencyResponse(final List<String> currencyCodes) {
@@ -100,7 +110,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
-                new BasicNameValuePair("rate_date", rateDate.toString()));
+                new BasicNameValuePair("date", rateDate.toString()));
 
         return this.getUrl(path, queries);
     }
@@ -162,5 +172,10 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                 return this.name_plural;
             }
         }
+    }
+
+    @Data
+    public class HistoricalExchangeRateResponse {
+        private Map<String, Map<String, BigDecimal>> data;
     }
 }
