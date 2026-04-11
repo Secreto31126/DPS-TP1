@@ -181,7 +181,7 @@ class CurrencyConverterIntegrationTest {
         String mockErrorBody = """
                 Server Down
                 """;
-        stubEndpointWithError("/v1/currencies", 500, "Server Down");
+        stubEndpointWithError("/v1/currencies", 500, mockErrorBody);
 
         AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("USD"));
 
