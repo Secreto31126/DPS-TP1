@@ -34,6 +34,7 @@ class CurrencyConverterIntegrationTest {
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency CAD = Currency.getInstance("CAD");
+
     private static final String LATEST_ENDPOINT = "/v1/latest";
     private static final String HISTORICAL_ENDPOINT = "/v1/historical";
     private static final String CURRENCIES_ENDPOINT = "/v1/currencies";
