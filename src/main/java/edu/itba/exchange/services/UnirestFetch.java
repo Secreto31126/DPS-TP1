@@ -12,6 +12,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 
 import edu.itba.exchange.exceptions.ExternalServiceException;
+import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import lombok.AllArgsConstructor;
@@ -27,12 +28,12 @@ public class UnirestFetch implements Fetch {
     }
 
     @Override
-    public <E> E getJson(URL target, Options options, Type clazz) {
+    public <E> E getJson(URL target, Options options, Type clazz) throws FetchException {
         options.addHeader("Accept", "application/json");
         final var response = this.get(target, options);
 
         if (!response.ok() || response.body().isBlank()) {
-            throw new IllegalStateException("Failed to fetch JSON");
+            throw new FetchException(response.status(), response.body());
         }
 
         return this.json.parse(response.body(), clazz);

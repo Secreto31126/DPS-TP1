@@ -7,6 +7,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 
+import edu.itba.exchange.exceptions.FetchException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -68,11 +69,19 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(entry -> new Rate(from, Currency.getInstance(entry.getKey()), entry.getValue()))
                     .toList();
         } else {
+            return getRateList(from, url, options);
+        }
+    }
+
+    private List<Rate> getRateList(Currency from, URL url, Fetch.Options options) {
+        try {
             final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
 
             return response.getData().entrySet().stream()
                     .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
                     .toList();
+        } catch (FetchException e) {
+            throw new CurrencyNotFoundException("One or more of the provided currencies are not available");
         }
     }
 
