@@ -96,7 +96,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate) {
-        final var path = "/v1/historical";
+        final var path = "/historical";
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
@@ -106,7 +106,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     private URL buildLatestRateUrl(final Currency from, final String currencies) {
-        final var path = "/v1/latest";
+        final var path = "/latest";
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies));
