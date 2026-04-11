@@ -8,10 +8,10 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.*;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
 import edu.itba.exchange.interfaces.PropertiesProvider;
@@ -23,40 +23,29 @@ import edu.itba.exchange.services.GsonJSON;
 
 class CurrencyConverterIntegrationTest {
 
-    private static WireMockServer wireMockServer;
+    @RegisterExtension
+    static WireMockExtension wireMock = WireMockExtension.newInstance()
+            .options(WireMockConfiguration.wireMockConfig().dynamicPort())
+            .build();
+
     private CurrencyConverter converter;
 
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency CAD = Currency.getInstance("CAD");
 
-    @BeforeAll
-    static void startServer() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
-        wireMockServer.start();
-        configureFor("localhost", wireMockServer.port());
-    }
-
-    @AfterAll
-    static void stopServer() {
-        if (wireMockServer != null && wireMockServer.isRunning()) {
-            wireMockServer.stop();
-        }
-    }
-
     @BeforeEach
     void setUp() {
-        wireMockServer.resetAll();
-
-        String baseUrl = "http://localhost:" + wireMockServer.port() + "/v1";
-
-        PropertiesProvider propertiesProvider = Mockito.mock(PropertiesProvider.class);
-        Mockito.when(propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_BASE_URL")).thenReturn(baseUrl);
-        Mockito.when(propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_TOKEN")).thenReturn("test-token");
+        PropertiesProvider testProperties = key -> {
+            if ("FREE_CURRENCY_EXCHANGE_API_BASE_URL".equals(key)) return wireMock.baseUrl() + "/v1";
+            if ("FREE_CURRENCY_EXCHANGE_API_TOKEN".equals(key)) return "test-token";
+            return null;
+        };
 
         Fetch fetch = new UnirestFetch(new GsonJSON());
-        var provider = new FreeCurrencyExchangeRateProvider(fetch, propertiesProvider);
-        converter = new CurrencyConverter(provider);
+        var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties);
+
+        this.converter = new CurrencyConverter(provider);
     }
 
     @Test
@@ -189,14 +178,14 @@ class CurrencyConverterIntegrationTest {
     }
 
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
-        stubFor(get(urlPathEqualTo("/v1/latest"))
+        wireMock.stubFor(get(urlPathEqualTo("/v1/latest"))
                 .withQueryParam("base_currency", equalTo(base))
                 .withQueryParam("currencies", equalTo(targets))
                 .willReturn(okJson(jsonResponse)));
     }
 
     private void stubHistoricalRateSuccess(final String base, final String targets, final String date, final String jsonResponse) {
-        stubFor(get(urlPathEqualTo("/v1/historical"))
+        wireMock.stubFor(get(urlPathEqualTo("/v1/historical"))
                 .withQueryParam("base_currency", equalTo(base))
                 .withQueryParam("currencies", equalTo(targets))
                 .withQueryParam("date", equalTo(date))
@@ -204,14 +193,14 @@ class CurrencyConverterIntegrationTest {
     }
 
     private void stubEndpointWithError(final String path, int statusCode, final String jsonBody) {
-        stubFor(get(urlPathEqualTo(path))
+        wireMock.stubFor(get(urlPathEqualTo(path))
                 .willReturn(aResponse()
                         .withStatus(statusCode)
                         .withBody(jsonBody)));
     }
 
     private void stubAvailableCurrenciesSuccess(final String requestedCurrencies, final String jsonResponse) {
-        stubFor(get(urlPathEqualTo("/v1/currencies"))
+        wireMock.stubFor(get(urlPathEqualTo("/v1/currencies"))
                 .withQueryParam("currencies", equalTo(requestedCurrencies))
                 .willReturn(okJson(jsonResponse)));
     }
