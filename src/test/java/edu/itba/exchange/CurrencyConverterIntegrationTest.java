@@ -33,6 +33,9 @@ class CurrencyConverterIntegrationTest {
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency CAD = Currency.getInstance("CAD");
+    private static final String LATEST_ENDPOINT = "/v1/latest";
+    private static final String HISTORICAL_ENDPOINT = "/v1/historical";
+    private static final String CURRENCIES_ENDPOINT = "/v1/currencies";
 
     @BeforeEach
     void setUp() {
@@ -123,7 +126,7 @@ class CurrencyConverterIntegrationTest {
                     "message": "Invalid currency code"
                 }
                 """;
-        stubEndpointWithError("/v1/latest", 422, mockJson);
+        stubEndpointWithError(LATEST_ENDPOINT, 422, mockJson);
         Money money = new Money(new BigDecimal("100"), EUR);
 
         List<ConversionResult> results = converter.convert(money, List.of(USD));
@@ -138,7 +141,7 @@ class CurrencyConverterIntegrationTest {
         String mockErrorBody = """
                 Internal Server Error
                 """;
-        stubEndpointWithError("/v1/latest", 500, mockErrorBody);
+        stubEndpointWithError(LATEST_ENDPOINT, 500, mockErrorBody);
         Money money = new Money(new BigDecimal("100"), EUR);
 
         List<ConversionResult> results = converter.convert(money, List.of(USD));
@@ -170,7 +173,7 @@ class CurrencyConverterIntegrationTest {
         String mockErrorBody = """
                 Server Down
                 """;
-        stubEndpointWithError("/v1/currencies", 500, mockErrorBody);
+        stubEndpointWithError(CURRENCIES_ENDPOINT, 500, mockErrorBody);
 
         AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("USD"));
 
@@ -178,14 +181,14 @@ class CurrencyConverterIntegrationTest {
     }
 
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
-        wireMock.stubFor(get(urlPathEqualTo("/v1/latest"))
+        wireMock.stubFor(get(urlPathEqualTo(LATEST_ENDPOINT))
                 .withQueryParam("base_currency", equalTo(base))
                 .withQueryParam("currencies", equalTo(targets))
                 .willReturn(okJson(jsonResponse)));
     }
 
     private void stubHistoricalRateSuccess(final String base, final String targets, final String date, final String jsonResponse) {
-        wireMock.stubFor(get(urlPathEqualTo("/v1/historical"))
+        wireMock.stubFor(get(urlPathEqualTo(HISTORICAL_ENDPOINT))
                 .withQueryParam("base_currency", equalTo(base))
                 .withQueryParam("currencies", equalTo(targets))
                 .withQueryParam("date", equalTo(date))
@@ -200,7 +203,7 @@ class CurrencyConverterIntegrationTest {
     }
 
     private void stubAvailableCurrenciesSuccess(final String requestedCurrencies, final String jsonResponse) {
-        wireMock.stubFor(get(urlPathEqualTo("/v1/currencies"))
+        wireMock.stubFor(get(urlPathEqualTo(CURRENCIES_ENDPOINT))
                 .withQueryParam("currencies", equalTo(requestedCurrencies))
                 .willReturn(okJson(jsonResponse)));
     }
