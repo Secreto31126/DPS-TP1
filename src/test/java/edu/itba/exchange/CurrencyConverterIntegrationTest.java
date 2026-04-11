@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.*;
@@ -54,14 +55,7 @@ class CurrencyConverterIntegrationTest {
     @Test
     void shouldConvertSingleCurrency() {
         // arrange
-        String mockJson = """
-            {
-              "data": {
-                "USD": 1.2
-              }
-            }
-            """;
-
+        String mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2));
         stubLiveRateSuccess("EUR", "USD", mockJson);
         Money amountToConvert = new Money(new BigDecimal("100"), EUR);
 
@@ -69,7 +63,7 @@ class CurrencyConverterIntegrationTest {
         ConversionResult result = converter.convert(amountToConvert, USD);
 
         // assert
-        assertTrue(result instanceof ConversionResult.Success, "Expected a successful conversion result");
+        assertInstanceOf(ConversionResult.Success.class, result, "Expected a successful conversion result");
         var success = (ConversionResult.Success) result;
 
         assertEquals(0, new BigDecimal("120.0").compareTo(success.money().amount()));
@@ -78,61 +72,55 @@ class CurrencyConverterIntegrationTest {
 
     @Test
     void shouldConvertMultipleCurrencies() {
-        String mockJson = """
-                {
-                    "data": {
-                        "USD": 1.2,
-                        "CAD": 1.5
-                    }
-                }
-                """;
+        var mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2, "CAD", 1.5));
         stubLiveRateSuccess("EUR", "USD,CAD", mockJson);
         Money amountToConvert = new Money(new BigDecimal("100"), EUR);
 
         List<ConversionResult> results = converter.convert(amountToConvert, List.of(USD, CAD));
 
         assertEquals(2, results.size(), "Should return exactly two conversion results");
-        assertTrue(results.get(0) instanceof ConversionResult.Success);
-        assertTrue(results.get(1) instanceof ConversionResult.Success);
+        assertInstanceOf(ConversionResult.Success.class, results.get(0));
+        assertInstanceOf(ConversionResult.Success.class, results.get(1));
     }
 
     @Test
     void shouldConvertHistoricalRate() {
         String historicalDate = "2024-01-01";
-        String mockNestedJson = """
-                {
-                    "data": {
-                        "%s": {
-                            "USD": 1.1
-                        }
-                    }
-                }
-                """.formatted(historicalDate);
+        String mockNestedJson = ExchangeRateApiFixtures.historical(historicalDate, Map.of("USD", 1.1));
         stubHistoricalRateSuccess("EUR", "USD", historicalDate, mockNestedJson);
 
         Money amountToConvert = new Money(new BigDecimal("100"), EUR);
 
         ConversionResult result = converter.convert(amountToConvert, USD, LocalDate.parse(historicalDate));
 
-        assertTrue(result instanceof ConversionResult.Success);
+        assertInstanceOf(ConversionResult.Success.class, result);
         var success = (ConversionResult.Success) result;
         assertEquals(0, new BigDecimal("110.0").compareTo(success.money().amount()));
     }
 
     @Test
+    void shouldReturnAvailableCurrencies() {
+        List<String> codes = List.of("USD", "EUR");
+        String mockJson = ExchangeRateApiFixtures.currencies(codes);
+        stubAvailableCurrenciesSuccess("USD,EUR", mockJson);
+
+        AvailableCurrenciesResult result = converter.getAvailableCurrencies(codes);
+
+        assertInstanceOf(AvailableCurrenciesResult.Success.class, result, "Expected a successful currencies fetch");
+        var success = (AvailableCurrenciesResult.Success) result;
+        assertEquals(2, success.currencies().size());
+    }
+
+    @Test
     void shouldHandleInvalidCurrencyRejection() {
-        String mockJson = """
-                {
-                    "message": "Invalid currency code"
-                }
-                """;
+        String mockJson = ExchangeRateApiFixtures.error("Invalid currency code");
         stubEndpointWithError(LATEST_ENDPOINT, 422, mockJson);
         Money money = new Money(new BigDecimal("100"), EUR);
 
         List<ConversionResult> results = converter.convert(money, List.of(USD));
 
-        assertTrue(results.get(0) instanceof ConversionResult.Failure);
-        var failure = (ConversionResult.Failure) results.get(0);
+        assertInstanceOf(ConversionResult.Failure.class, results.getFirst());
+        var failure = (ConversionResult.Failure) results.getFirst();
         assertTrue(failure.errorMessage().contains("Failed to fetch JSON"));
     }
 
@@ -146,26 +134,7 @@ class CurrencyConverterIntegrationTest {
 
         List<ConversionResult> results = converter.convert(money, List.of(USD));
 
-        assertTrue(results.get(0) instanceof ConversionResult.Failure, "Should gracefully return a Failure object on 500 errors");
-    }
-
-    @Test
-    void shouldReturnAvailableCurrencies() {
-        String mockJson = """
-                {
-                    "data": {
-                        "USD": {"code": "USD"},
-                        "EUR": {"code": "EUR"}
-                    }
-                }
-                """;
-        stubAvailableCurrenciesSuccess("USD,EUR", mockJson);
-
-        AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("USD", "EUR"));
-
-        assertTrue(result instanceof AvailableCurrenciesResult.Success, "Expected a successful currencies fetch");
-        var success = (AvailableCurrenciesResult.Success) result;
-        assertEquals(2, success.currencies().size());
+        assertInstanceOf(ConversionResult.Failure.class, results.getFirst(), "Should gracefully return a Failure object on 500 errors");
     }
 
     @Test
@@ -177,7 +146,7 @@ class CurrencyConverterIntegrationTest {
 
         AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("USD"));
 
-        assertTrue(result instanceof AvailableCurrenciesResult.Failure, "Should return a Failure result when the API crashes");
+        assertInstanceOf(AvailableCurrenciesResult.Failure.class, result, "Should return a Failure result when the API crashes");
     }
 
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
