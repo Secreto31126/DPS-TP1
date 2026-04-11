@@ -4,7 +4,7 @@
 
 - [x] Cómo usuario, quiero poder obtener solo la cotización (tasa de cambio) entre dos monedas, sin realizar una conversión de un monto específico. e.g. (USD a EUR)
 
-- [ ] Cómo usuario, quiero que el sistema maneje y notifique errores de conexión o errores de la API de manera clara (ej. código de error 404, 500, etc.) en lugar de simplemente fallar.
+- [x] Cómo usuario, quiero que el sistema maneje y notifique errores de conexión o errores de la API de manera clara (ej. código de error 404, 500, etc.) en lugar de simplemente fallar.
 
 - [x] Cómo usuario, quiero poder convertir desde el mismo monto y moneda a más de una moneda a la vez. e.g. (100 USD, [EUR, JPY]) para así tener visibilidad completa de la conversión de una moneda a múltiples.
 

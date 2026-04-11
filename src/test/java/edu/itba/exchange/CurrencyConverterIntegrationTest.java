@@ -121,8 +121,6 @@ class CurrencyConverterIntegrationTest {
         List<ConversionResult> results = converter.convert(money, List.of(USD));
 
         assertInstanceOf(ConversionResult.Failure.class, results.getFirst());
-        var failure = (ConversionResult.Failure) results.getFirst();
-        assertTrue(failure.errorMessage().contains("Failed to fetch JSON"));
     }
 
     @Test

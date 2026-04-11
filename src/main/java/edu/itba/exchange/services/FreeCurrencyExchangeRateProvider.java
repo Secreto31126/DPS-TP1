@@ -7,14 +7,17 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 
+import edu.itba.exchange.ApiError;
+import edu.itba.exchange.ApiErrorCategory;
+import edu.itba.exchange.ExceptionTranslationMapper;
+import edu.itba.exchange.exceptions.CurrencyException;
+import edu.itba.exchange.exceptions.CurrencyNotFoundException;
+import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
+import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
-
-import edu.itba.exchange.exceptions.CurrencyNotFoundException;
-import edu.itba.exchange.exceptions.ExternalServiceException;
-import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
@@ -71,7 +74,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
                     .toList();
         } catch (final FetchException e) {
-            throw new CurrencyNotFoundException("One or more of the provided currencies are not available");
+            throw ExceptionTranslationMapper.translate(e);
         }
     }
 
@@ -87,7 +90,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(entry -> new Rate(from, Currency.getInstance(entry.getKey()), entry.getValue()))
                     .toList();
         } catch (final FetchException e) {
-            throw new ExternalServiceException(e.getMessage());
+            throw ExceptionTranslationMapper.translate(e);
         }
     }
 
@@ -102,9 +105,9 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(Currency::getInstance)
                     .toList();
         } catch (final FetchException e) {
-            throw new ExternalServiceException(e.getMessage());
+            throw ExceptionTranslationMapper.translate(e);
         } catch (final IllegalArgumentException e) {
-            throw new CurrencyNotFoundException(e.getMessage());
+            throw new CurrencyNotFoundException(new ApiError(ApiErrorCategory.CLIENT_ERROR, e.getMessage()));
         }
     }
 
@@ -150,7 +153,9 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .setParameters(filteredQuery)
                     .build().toURL();
         } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ExternalServiceException("Internal error building API URL");
+            throw new ExternalServiceException(
+                    new ApiError(ApiErrorCategory.CLIENT_ERROR, "Internal error building API URL"), e
+            );
         }
     }
 

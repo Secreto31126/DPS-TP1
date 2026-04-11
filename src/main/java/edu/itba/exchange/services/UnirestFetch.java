@@ -11,6 +11,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 
+import edu.itba.exchange.ApiError;
 import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.Fetch;
@@ -41,7 +42,7 @@ public class UnirestFetch implements Fetch {
 
     @Override
     public Fetch.Response post(final URL target, final Options options) {
-        return this.fetchRequest(target,options,Unirest::post);
+        return this.fetchRequest(target, options, Unirest::post);
     }
 
     @Override
@@ -49,15 +50,16 @@ public class UnirestFetch implements Fetch {
         return new UnirestOptions();
     }
 
-    private Fetch.Response fetchRequest(final URL target, final Options options, final Function<String,? extends HttpRequest> request){
-    try {
-        final var response = request.apply(target.toString()).headers(options.getHeaders());
-        return new Response(response.asString());
+    private Fetch.Response fetchRequest(final URL target, final Options options, final Function<String, ? extends HttpRequest> request) {
+        try {
+            final var response = request.apply(target.toString()).headers(options.getHeaders());
+            return new Response(response.asString());
 
-    } catch (UnirestException e) {
-        throw new ExternalServiceException(e.getMessage());
+        } catch (UnirestException e) {
+            throw new ExternalServiceException(ApiError.networkError(e.getMessage()), e);
+        }
     }
-    }
+
     @Getter
     public class UnirestOptions implements Fetch.Options {
         private final Map<String, String> headers = new HashMap<>();
