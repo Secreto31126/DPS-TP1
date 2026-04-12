@@ -148,6 +148,27 @@ class CurrencyConverterIntegrationTest {
         assertInstanceOf(AvailableCurrenciesResult.Failure.class, result, "Should return a Failure result when the API crashes");
     }
 
+    @Test
+    void shouldReturnAllAvailableCurrencies() {
+        String mockJson = ExchangeRateApiFixtures.currencies(List.of("USD", "EUR"));
+        stubAvailableCurrenciesSuccess("", mockJson);
+
+        AvailableCurrenciesResult result = converter.getAvailableCurrencies();
+
+        assertInstanceOf(AvailableCurrenciesResult.Success.class, result);
+        assertEquals(2, ((AvailableCurrenciesResult.Success) result).currencies().size());
+    }
+
+    @Test
+    void shouldHandle422ErrorInCurrencies() {
+        String mockJson = ExchangeRateApiFixtures.error("Invalid");
+        stubEndpointWithError(CURRENCIES_ENDPOINT, 422, mockJson);
+
+        AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("INVALID"));
+
+        assertInstanceOf(AvailableCurrenciesResult.Failure.class, result);
+    }
+
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
         wireMock.stubFor(get(urlPathEqualTo(LATEST_ENDPOINT))
                 .withQueryParam("base_currency", equalTo(base))
@@ -171,8 +192,10 @@ class CurrencyConverterIntegrationTest {
     }
 
     private void stubAvailableCurrenciesSuccess(final String requestedCurrencies, final String jsonResponse) {
-        wireMock.stubFor(get(urlPathEqualTo(CURRENCIES_ENDPOINT))
-                .withQueryParam("currencies", equalTo(requestedCurrencies))
-                .willReturn(okJson(jsonResponse)));
+        var mappingBuilder = get(urlPathEqualTo(CURRENCIES_ENDPOINT));
+        if (requestedCurrencies != null && !requestedCurrencies.isEmpty()) {
+            mappingBuilder.withQueryParam("currencies", equalTo(requestedCurrencies));
+        }
+        wireMock.stubFor(mappingBuilder.willReturn(okJson(jsonResponse)));
     }
 }
