@@ -24,7 +24,7 @@ public class CurrencyConverter {
             final var currencies = this.provider.getAvailableCurrencies(currencyCodes);
             return new AvailableCurrenciesResult.Success(currencies);
         } catch (final CurrencyException e) {
-            return new AvailableCurrenciesResult.Failure(e.getMessage());
+            return new AvailableCurrenciesResult.Failure(e.getApiError());
         }
     }
 
@@ -45,7 +45,7 @@ public class CurrencyConverter {
             return this.collectProviderResult(money.currency(), to, date, rate -> new ConversionResult.Success(money.convert(rate), rate));
         }
         catch (final CurrencyException e){
-            return List.of(new ConversionResult.Failure(e.getMessage()));
+            return List.of(new ConversionResult.Failure(e.getApiError()));
         }
     }
 
@@ -65,7 +65,7 @@ public class CurrencyConverter {
         try {
             return this.collectProviderResult(from, to, date, ExchangeRateResult.Success::new);
         } catch (CurrencyException e) {
-            return List.of(new ExchangeRateResult.Failure(e.getMessage()));
+            return List.of(new ExchangeRateResult.Failure(e.getApiError()));
         }
     }
     private <E> List<E> collectProviderResult(final Currency from, final List<Currency> to, final LocalDate date, Function<Rate, E> mapper){

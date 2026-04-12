@@ -1,5 +1,7 @@
 package edu.itba.exchange.interfaces;
 
+import edu.itba.exchange.exceptions.FetchException;
+
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Map;
@@ -22,8 +24,9 @@ public interface Fetch {
      * @param options The request modifiers ("Accept: application/json" is added)
      * @param clazz   The json structure
      * @return The json response parsed
+     * @throws FetchException on 4NN and 5NN status code responses
      */
-    <E> E getJson(final URL target, final Options options, Type clazz);
+    <E> E getJson(final URL target, final Options options, Type clazz) throws FetchException;
 
     /**
      * POST an endpoint
