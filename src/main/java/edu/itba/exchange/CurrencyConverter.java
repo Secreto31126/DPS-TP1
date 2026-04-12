@@ -69,7 +69,7 @@ public class CurrencyConverter {
         }
     }
     private <E> List<E> collectProviderResult(final Currency from, final List<Currency> to, final LocalDate date, Function<Rate, E> mapper){
-        final var rates = date==null ? this.provider.getRate(from,to): this.provider.getRate(from, to, date);
+        final var rates = date == null ? this.provider.getRate(from,to): this.provider.getRate(from, to, date);
         return rates.stream().map(mapper).toList();
     }
 }
