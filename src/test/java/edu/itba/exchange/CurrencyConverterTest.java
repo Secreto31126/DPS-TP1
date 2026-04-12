@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
+import edu.itba.exchange.models.ConversionResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

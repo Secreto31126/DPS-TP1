@@ -7,8 +7,7 @@ import java.time.LocalDate;
 
 import edu.itba.exchange.exceptions.CurrencyException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
-import edu.itba.exchange.models.Money;
-import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.models.*;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

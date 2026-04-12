@@ -1,0 +1,31 @@
+package edu.itba.exchange.exceptions.freecurrency;
+
+import edu.itba.exchange.exceptions.ApiError;
+import edu.itba.exchange.interfaces.HttpStatus;
+import edu.itba.exchange.exceptions.CurrencyException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidBaseCurrencyException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
+
+import java.util.Map;
+
+public class ValidationErrorException extends CurrencyException {
+
+    private static final String MESSAGE = "Validation error, please check the list of validation errors.";
+
+    public ValidationErrorException() {
+        this(MESSAGE);
+    }
+
+    public ValidationErrorException(String message) {
+        var apiError = ApiError.fromHttpStatus(HttpStatus.UNPROCESSABLE_ENTITY, message);
+        super(apiError);
+    }
+
+    public static ValidationErrorException fromErrors(Map<String, String[]> errors) {
+        if (errors.containsKey("base_currency")) return new InvalidBaseCurrencyException();
+        if (errors.containsKey("currencies")) return new InvalidCurrenciesException();
+        if (errors.containsKey("date")) return new InvalidDateException();
+        return new ValidationErrorException();
+    }
+}
