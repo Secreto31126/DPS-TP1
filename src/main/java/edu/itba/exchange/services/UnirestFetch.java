@@ -4,11 +4,16 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.mashape.unirest.request.HttpRequest;
 
+import edu.itba.exchange.ApiError;
+import edu.itba.exchange.exceptions.ExternalServiceException;
+import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import lombok.AllArgsConstructor;
@@ -20,21 +25,16 @@ public class UnirestFetch implements Fetch {
 
     @Override
     public Fetch.Response get(final URL target, final Options options) {
-        try {
-            final var response = Unirest.get(target.toString()).headers(options.getHeaders()).asJson();
-            return new Response(response);
-        } catch (UnirestException e) {
-            throw new RuntimeException("Failed to get");
-        }
+        return this.fetchRequest(target, options, Unirest::get);
     }
 
     @Override
-    public <E> E getJson(URL target, Options options, Type clazz) {
+    public <E> E getJson(URL target, Options options, Type clazz) throws FetchException {
         options.addHeader("Accept", "application/json");
         final var response = this.get(target, options);
 
         if (!response.ok() || response.body().isBlank()) {
-            throw new IllegalStateException("Failed to fetch JSON");
+            throw new FetchException(response.status(), response.body());
         }
 
         return this.json.parse(response.body(), clazz);
@@ -42,17 +42,22 @@ public class UnirestFetch implements Fetch {
 
     @Override
     public Fetch.Response post(final URL target, final Options options) {
-        try {
-            final var response = Unirest.post(target.toString()).headers(options.getHeaders()).asJson();
-            return new Response(response);
-        } catch (UnirestException e) {
-            throw new RuntimeException("Failed to post");
-        }
+        return this.fetchRequest(target, options, Unirest::post);
     }
 
     @Override
     public Fetch.Options getOptions() {
         return new UnirestOptions();
+    }
+
+    private Fetch.Response fetchRequest(final URL target, final Options options, final Function<String, ? extends HttpRequest> request) {
+        try {
+            final var response = request.apply(target.toString()).headers(options.getHeaders());
+            return new Response(response.asString());
+
+        } catch (UnirestException e) {
+            throw new ExternalServiceException(ApiError.networkError(e.getMessage()), e);
+        }
     }
 
     @Getter
@@ -72,7 +77,7 @@ public class UnirestFetch implements Fetch {
         }
 
         public boolean ok() {
-            return this.status / 100 != 2;
+            return this.status / 100 == 2;
         }
     }
 }

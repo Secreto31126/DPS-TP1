@@ -26,6 +26,7 @@
         <org.junit.jupiter.version>6.0.3</org.junit.jupiter.version>
         <org.mockito.version>5.23.0</org.mockito.version>
         <org.hamcrest.version>3.0</org.hamcrest.version>
+        <wiremock-jetty12.version>3.10.0</wiremock-jetty12.version>
 
         <!-- Plugins -->
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -89,6 +90,13 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
 			<version>${org.junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-jetty12</artifactId>
+            <version>${wiremock-jetty12.version}</version>
             <scope>test</scope>
         </dependency>
 

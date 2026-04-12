@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
@@ -25,8 +26,6 @@ class CurrencyConverterTest {
 
 	private static final Currency USD = Currency.getInstance("USD");
 	private static final Currency EUR = Currency.getInstance("EUR");
-	private static final Currency CAD = Currency.getInstance("CAD");
-
 	private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
 
 	@Test
@@ -35,7 +34,7 @@ class CurrencyConverterTest {
 		final var euros = new Money("100", EUR);
 		final var dolars = new Money("105.00", USD);
 
-		when(this.provider.getRate(EUR, USD)).thenReturn(EUR_USD_RATE);
+		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
 
 		final var converter = new CurrencyConverter(provider);
 
@@ -47,35 +46,21 @@ class CurrencyConverterTest {
 	}
 
 	@Test
-	void testGetAvailableCurrencies() {
+	void testHistoricalConvert() {
 		// Given
-		final var CURRENCIES_LIST = List.of(USD, EUR, CAD);
+		final var euros = new Money("100", EUR);
+		final var date = LocalDate.of(2024, 1, 1);
+		final var historicalRate = new Rate(EUR, USD, "1.10", date);
+		final var dollars = new Money("110.00", USD);
 
-		when(this.provider.getAvailableCurrencies(List.of())).thenReturn(CURRENCIES_LIST);
+		when(this.provider.getRate(EUR, List.of(USD), date)).thenReturn(List.of(historicalRate));
 
 		final var converter = new CurrencyConverter(provider);
 
 		// When
-		final var result = converter.getAvailableCurrencies();
+		final var result = converter.convert(euros, USD, date);
 
 		// Then
-		assertThat(result, is(new AvailableCurrenciesResult.Success(CURRENCIES_LIST)));
-	}
-
-	@Test
-	void testGetSpecificCurrencies() {
-		// Given
-		final var CURRENCIES_LIST = List.of(USD, EUR);
-		final var CURRENCY_CODES_LIST = List.of("USD", "EUR");
-
-		when(this.provider.getAvailableCurrencies(CURRENCY_CODES_LIST)).thenReturn(CURRENCIES_LIST);
-
-		final var converter = new CurrencyConverter(provider);
-
-		// When
-		final var result = converter.getAvailableCurrencies(CURRENCY_CODES_LIST);
-
-		// Then
-		assertThat(result, is(new AvailableCurrenciesResult.Success(CURRENCIES_LIST)));
+		assertThat(result, is(new ConversionResult.Success(dollars, historicalRate)));
 	}
 }

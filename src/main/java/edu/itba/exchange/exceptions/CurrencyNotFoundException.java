@@ -1,7 +1,13 @@
 package edu.itba.exchange.exceptions;
 
-public class CurrencyNotFoundException extends RuntimeException {
-    public CurrencyNotFoundException(String msg){
-        super(msg);
+import edu.itba.exchange.ApiError;
+
+public class CurrencyNotFoundException extends CurrencyException {
+    public CurrencyNotFoundException(final ApiError apiError) {
+        super(apiError);
+    }
+
+    public CurrencyNotFoundException(final ApiError apiError, final Throwable cause) {
+        super(apiError, cause);
     }
 }
