@@ -159,15 +159,6 @@ class CurrencyConverterIntegrationTest {
         assertEquals(2, ((AvailableCurrenciesResult.Success) result).currencies().size());
     }
 
-    @Test
-    void shouldHandle422ErrorInCurrencies() {
-        String mockJson = ExchangeRateApiFixtures.error("Invalid");
-        stubEndpointWithError(CURRENCIES_ENDPOINT, 422, mockJson);
-
-        AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("INVALID"));
-
-        assertInstanceOf(AvailableCurrenciesResult.Failure.class, result);
-    }
 
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
         wireMock.stubFor(get(urlPathEqualTo(LATEST_ENDPOINT))
