@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import edu.itba.exchange.ApiError;
 import org.junit.jupiter.api.Test;
 
-class ExceptionCoverageTest {
+class ExceptionsTest {
     private static final ApiError ERROR = ApiError.networkError("error");
 
     @Test

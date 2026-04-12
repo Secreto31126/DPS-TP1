@@ -9,7 +9,7 @@ import java.util.List;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
-class ResultCoverageTest {
+class ResultTest {
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Rate RATE = new Rate(EUR, USD, new BigDecimal("1.1"));
