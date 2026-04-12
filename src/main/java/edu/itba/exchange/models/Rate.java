@@ -20,7 +20,4 @@ public record Rate(Currency from, Currency to, BigDecimal value, LocalDate rateD
     public Rate(Currency from, Currency to, String value, LocalDate rateDate) {
         this(from, to, new BigDecimal(value), rateDate);
     }
-
-    // At this Rate (pun intended), we should add the 2⁴ combinations
-    // of String to Currency/BigDecimal + LocalDate :)
 }
