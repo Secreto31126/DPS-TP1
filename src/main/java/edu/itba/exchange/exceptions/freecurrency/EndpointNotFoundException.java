@@ -9,7 +9,7 @@ public class EndpointNotFoundException extends CurrencyException {
     private static final String MESSAGE = "A requested endpoint does not exist.";
 
     public EndpointNotFoundException() {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.NOT_FOUND, MESSAGE);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.NOT_FOUND, MESSAGE);
         super(apiError);
     }
 }

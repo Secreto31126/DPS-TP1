@@ -18,7 +18,7 @@ public class ValidationErrorException extends CurrencyException {
     }
 
     public ValidationErrorException(String message) {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.UNPROCESSABLE_ENTITY, message);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.UNPROCESSABLE_ENTITY, message);
         super(apiError);
     }
 

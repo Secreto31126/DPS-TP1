@@ -9,7 +9,7 @@ public class ForbiddenException extends CurrencyException {
     private static final String MESSAGE = "You are not allowed to use this endpoint, please upgrade your plan.";
 
     public ForbiddenException() {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.FORBIDDEN, MESSAGE);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.FORBIDDEN, MESSAGE);
         super(apiError);
     }
 }

@@ -9,7 +9,7 @@ public class RateLimitException extends CurrencyException {
     private static final String MESSAGE = "You have hit your rate limit or your monthly limit. For more requests please upgrade your plan.";
 
     public RateLimitException() {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.TOO_MANY_REQUESTS, MESSAGE);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.TOO_MANY_REQUESTS, MESSAGE);
         super(apiError);
     }
 }

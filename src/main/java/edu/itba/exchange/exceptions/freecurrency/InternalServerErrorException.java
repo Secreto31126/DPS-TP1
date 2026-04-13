@@ -9,7 +9,7 @@ public class InternalServerErrorException extends CurrencyException {
     private static final String MESSAGE = "Internal Server Error.";
 
     public InternalServerErrorException() {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR, MESSAGE);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR, MESSAGE);
         super(apiError);
     }
 }

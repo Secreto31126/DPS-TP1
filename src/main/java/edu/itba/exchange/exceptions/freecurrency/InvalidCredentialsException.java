@@ -9,7 +9,7 @@ public class InvalidCredentialsException extends CurrencyException {
     private static final String MESSAGE = "Invalid authentication credentials.";
 
     public InvalidCredentialsException() {
-        var apiError = ApiError.fromHttpStatus(HttpStatus.UNAUTHORIZED, MESSAGE);
+        final var apiError = ApiError.fromHttpStatus(HttpStatus.UNAUTHORIZED, MESSAGE);
         super(apiError);
     }
 }
