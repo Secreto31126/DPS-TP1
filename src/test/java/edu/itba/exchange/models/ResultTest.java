@@ -1,9 +1,9 @@
-package edu.itba.exchange;
+package edu.itba.exchange.models;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import edu.itba.exchange.models.Money;
-import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.exceptions.ApiError;
+
 import java.util.Currency;
 import java.util.List;
 import java.math.BigDecimal;

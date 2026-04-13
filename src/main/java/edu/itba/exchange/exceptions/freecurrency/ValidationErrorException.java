@@ -23,6 +23,7 @@ public class ValidationErrorException extends CurrencyException {
     }
 
     public static ValidationErrorException fromErrors(Map<String, String[]> errors) {
+        if (errors == null) return new ValidationErrorException();
         if (errors.containsKey("base_currency")) return new InvalidBaseCurrencyException();
         if (errors.containsKey("currencies")) return new InvalidCurrenciesException();
         if (errors.containsKey("date")) return new InvalidDateException();

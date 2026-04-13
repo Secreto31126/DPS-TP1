@@ -1,4 +1,4 @@
-package edu.itba.exchange;
+package edu.itba.exchange.exceptions;
 
 import static org.junit.jupiter.api.Assertions.*;
 

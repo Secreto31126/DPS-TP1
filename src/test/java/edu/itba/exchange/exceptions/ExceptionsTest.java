@@ -1,7 +1,7 @@
 package edu.itba.exchange.exceptions;
 
 import static org.junit.jupiter.api.Assertions.*;
-import edu.itba.exchange.ApiError;
+
 import org.junit.jupiter.api.Test;
 
 class ExceptionsTest {
