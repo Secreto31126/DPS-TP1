@@ -1,7 +1,8 @@
 package edu.itba.exchange.exceptions;
 
-import edu.itba.exchange.ApiError;
+import lombok.Getter;
 
+@Getter
 public abstract class CurrencyException extends RuntimeException {
     private final ApiError apiError;
 
@@ -15,7 +16,4 @@ public abstract class CurrencyException extends RuntimeException {
         this.apiError = apiError;
     }
 
-    public ApiError getApiError() {
-        return apiError;
-    }
 }

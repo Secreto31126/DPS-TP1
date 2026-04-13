@@ -1,6 +1,6 @@
-package edu.itba.exchange;
+package edu.itba.exchange.models;
 
-import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.exceptions.ApiError;
 
 public sealed interface ExchangeRateResult permits ExchangeRateResult.Success, ExchangeRateResult.Failure {
     record Success(Rate rate) implements ExchangeRateResult {}

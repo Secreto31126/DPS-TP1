@@ -1,4 +1,4 @@
-package edu.itba.exchange;
+package edu.itba.exchange.exceptions;
 
 public record ApiError(ApiErrorCategory category, String message) {
     private final static int CLIENT_ERROR_CLASS = 4;

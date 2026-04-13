@@ -7,14 +7,17 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 
-import edu.itba.exchange.ApiError;
-import edu.itba.exchange.ApiErrorCategory;
-import edu.itba.exchange.ExceptionTranslationMapper;
+import edu.itba.exchange.exceptions.ApiError;
+import edu.itba.exchange.exceptions.ApiErrorCategory;
 import edu.itba.exchange.exceptions.CurrencyException;
 import edu.itba.exchange.exceptions.CurrencyNotFoundException;
 import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
+import edu.itba.exchange.interfaces.FetchExceptionMapper;
+import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
+import edu.itba.exchange.services.dto.ExchangeRateResponse;
+import edu.itba.exchange.services.dto.HistoricalExchangeRateResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -23,12 +26,12 @@ import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 
 @AllArgsConstructor
 public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private final Fetch fetch;
     private final PropertiesProvider propertiesProvider;
+    private final FetchExceptionMapper<CurrencyException> fetchExceptionMapper;
 
     @Override
     public List<Currency> getAvailableCurrencies() {
@@ -74,7 +77,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
                     .toList();
         } catch (final FetchException e) {
-            throw ExceptionTranslationMapper.translate(e);
+            throw this.fetchExceptionMapper.translate(e);
         }
     }
 
@@ -90,7 +93,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(entry -> new Rate(from, Currency.getInstance(entry.getKey()), entry.getValue()))
                     .toList();
         } catch (final FetchException e) {
-            throw ExceptionTranslationMapper.translate(e);
+            throw this.fetchExceptionMapper.translate(e);
         }
     }
 
@@ -105,7 +108,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .map(Currency::getInstance)
                     .toList();
         } catch (final FetchException e) {
-            throw ExceptionTranslationMapper.translate(e);
+            throw this.fetchExceptionMapper.translate(e);
         } catch (final IllegalArgumentException e) {
             throw new CurrencyNotFoundException(new ApiError(ApiErrorCategory.CLIENT_ERROR, e.getMessage()));
         }
@@ -169,35 +172,5 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     private Fetch.Options getOptions() {
         return this.fetch.getOptions().addHeader("apikey", this.getApiToken());
-    }
-
-    @Data
-    public class ExchangeRateResponse {
-        private Map<String, BigDecimal> data;
-    }
-
-    @Data
-    public class ExchangeCurrenciesResponse {
-        private Map<String, ExchangeCurrencyData> data;
-
-        public record ExchangeCurrencyData(String symbol, String name, String symbol_native, long decimal_digits,
-                long rounding, String code, String name_plural) {
-            public String symbolNative() {
-                return this.symbol_native;
-            }
-
-            public long decimalDigits() {
-                return this.decimal_digits;
-            }
-
-            public String namePlural() {
-                return this.name_plural;
-            }
-        }
-    }
-
-    @Data
-    public class HistoricalExchangeRateResponse {
-        private Map<String, Map<String, BigDecimal>> data;
     }
 }

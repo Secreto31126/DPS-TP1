@@ -1,4 +1,6 @@
-package edu.itba.exchange;
+package edu.itba.exchange.models;
+
+import edu.itba.exchange.exceptions.ApiError;
 
 import java.util.Currency;
 import java.util.List;

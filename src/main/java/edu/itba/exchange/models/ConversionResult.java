@@ -1,7 +1,6 @@
-package edu.itba.exchange;
+package edu.itba.exchange.models;
 
-import edu.itba.exchange.models.Money;
-import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.exceptions.ApiError;
 
 public sealed interface ConversionResult permits ConversionResult.Success, ConversionResult.Failure {
     record Success(Money money, Rate rate) implements ConversionResult {}

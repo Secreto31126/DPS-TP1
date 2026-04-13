@@ -1,4 +1,4 @@
-package edu.itba.exchange;
+package edu.itba.exchange.exceptions;
 
 public enum ApiErrorCategory {
     CLIENT_ERROR,

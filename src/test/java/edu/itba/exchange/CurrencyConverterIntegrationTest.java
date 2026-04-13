@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import edu.itba.exchange.exceptions.CurrencyException;
+import edu.itba.exchange.interfaces.FetchExceptionMapper;
+import edu.itba.exchange.interfaces.JSON;
+import edu.itba.exchange.models.AvailableCurrenciesResult;
+import edu.itba.exchange.models.ConversionResult;
+import edu.itba.exchange.services.FreeCurrencyFetchExceptionMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -47,8 +53,11 @@ class CurrencyConverterIntegrationTest {
             return null;
         };
 
-        Fetch fetch = new UnirestFetch(new GsonJSON());
-        var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties);
+        JSON json = new GsonJSON();
+        Fetch fetch = new UnirestFetch(json);
+        FetchExceptionMapper<CurrencyException> exceptionMapper = new FreeCurrencyFetchExceptionMapper(json);
+
+        var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties, exceptionMapper);
 
         this.converter = new CurrencyConverter(provider);
     }
