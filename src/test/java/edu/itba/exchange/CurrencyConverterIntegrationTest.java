@@ -1,5 +1,8 @@
 package edu.itba.exchange;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -29,7 +32,6 @@ import edu.itba.exchange.services.UnirestFetch;
 import edu.itba.exchange.services.GsonJSON;
 
 class CurrencyConverterIntegrationTest {
-
     @RegisterExtension
     static WireMockExtension wireMock = WireMockExtension.newInstance()
             .options(WireMockConfiguration.wireMockConfig().dynamicPort())
@@ -47,17 +49,18 @@ class CurrencyConverterIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        PropertiesProvider testProperties = key -> {
-            if ("FREE_CURRENCY_EXCHANGE_API_BASE_URL".equals(key)) return wireMock.baseUrl() + "/v1";
-            if ("FREE_CURRENCY_EXCHANGE_API_TOKEN".equals(key)) return "test-token";
+        final PropertiesProvider testProperties = key -> {
+            if ("FREE_CURRENCY_EXCHANGE_API_BASE_URL".equals(key))
+                return wireMock.baseUrl() + "/v1";
+            if ("FREE_CURRENCY_EXCHANGE_API_TOKEN".equals(key))
+                return "test-token";
             return null;
         };
 
-        JSON json = new GsonJSON();
-        Fetch fetch = new UnirestFetch(json);
-        FetchExceptionMapper<CurrencyException> exceptionMapper = new FreeCurrencyFetchExceptionMapper(json);
+        final var json = new GsonJSON();
+        final var fetch = new UnirestFetch(json);
 
-        var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties, exceptionMapper);
+        final var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties, json);
 
         this.converter = new CurrencyConverter(provider);
     }
@@ -65,109 +68,120 @@ class CurrencyConverterIntegrationTest {
     @Test
     void shouldConvertSingleCurrency() {
         // arrange
-        String mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2));
+        final var mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2));
         stubLiveRateSuccess("EUR", "USD", mockJson);
-        Money amountToConvert = new Money(new BigDecimal("100"), EUR);
+        final var amountToConvert = new Money(new BigDecimal("100.0"), EUR);
 
         // act
-        ConversionResult result = converter.convert(amountToConvert, USD);
+        final var result = converter.convert(amountToConvert, USD);
 
         // assert
-        assertInstanceOf(ConversionResult.Success.class, result, "Expected a successful conversion result");
-        var success = (ConversionResult.Success) result;
+        assertThat(result, is(instanceOf(ConversionResult.Success.class)));
 
-        assertEquals(0, new BigDecimal("120.0").compareTo(success.money().amount()));
-        assertEquals("USD", success.money().currency().getCurrencyCode());
+        final var success = (ConversionResult.Success) result;
+        assertThat(success.money().amount(), is(new BigDecimal("120.00")));
+        assertThat(success.money().currency(), is(USD));
     }
 
     @Test
     void shouldConvertMultipleCurrencies() {
-        var mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2, "CAD", 1.5));
+        final var mockJson = ExchangeRateApiFixtures.latest(Map.of("USD", 1.2, "CAD", 1.5));
         stubLiveRateSuccess("EUR", "USD,CAD", mockJson);
-        Money amountToConvert = new Money(new BigDecimal("100"), EUR);
+        final var amountToConvert = new Money(new BigDecimal("100.0"), EUR);
 
-        List<ConversionResult> results = converter.convert(amountToConvert, List.of(USD, CAD));
+        final var results = converter.convert(amountToConvert, List.of(USD, CAD));
 
-        assertEquals(2, results.size(), "Should return exactly two conversion results");
-        assertInstanceOf(ConversionResult.Success.class, results.get(0));
-        assertInstanceOf(ConversionResult.Success.class, results.get(1));
+        assertThat(results.size(), is(2));
+        assertThat(results.get(0), is(instanceOf(ConversionResult.Success.class)));
+        assertThat(results.get(1), is(instanceOf(ConversionResult.Success.class)));
+
+        final var success = results.stream()
+                .map(e -> (ConversionResult.Success) e)
+                .filter(e -> e.money().currency().equals(CAD))
+                .findAny()
+                .orElseThrow();
+
+        assertThat(success.money().amount(), is(new BigDecimal("150.00")));
     }
 
     @Test
     void shouldConvertHistoricalRate() {
-        String historicalDate = "2024-01-01";
-        String mockNestedJson = ExchangeRateApiFixtures.historical(historicalDate, Map.of("USD", 1.1));
+        final var historicalDate = "2024-01-01";
+        final var mockNestedJson = ExchangeRateApiFixtures.historical(historicalDate, Map.of("USD", 1.1));
         stubHistoricalRateSuccess("EUR", "USD", historicalDate, mockNestedJson);
 
-        Money amountToConvert = new Money(new BigDecimal("100"), EUR);
+        final var amountToConvert = new Money(new BigDecimal("100.0"), EUR);
 
-        ConversionResult result = converter.convert(amountToConvert, USD, LocalDate.parse(historicalDate));
+        final var result = converter.convert(amountToConvert, USD, LocalDate.parse(historicalDate));
 
-        assertInstanceOf(ConversionResult.Success.class, result);
-        var success = (ConversionResult.Success) result;
-        assertEquals(0, new BigDecimal("110.0").compareTo(success.money().amount()));
+        assertThat(result, is(instanceOf(ConversionResult.Success.class)));
+
+        final var success = (ConversionResult.Success) result;
+        assertThat(success.money().amount(), is(new BigDecimal("110.00")));
     }
 
     @Test
     void shouldReturnAvailableCurrencies() {
-        List<String> codes = List.of("USD", "EUR");
-        String mockJson = ExchangeRateApiFixtures.currencies(codes);
+        final var codes = List.of("USD", "EUR");
+        final var mockJson = ExchangeRateApiFixtures.currencies(codes);
         stubAvailableCurrenciesSuccess("USD,EUR", mockJson);
 
-        AvailableCurrenciesResult result = converter.getAvailableCurrencies(codes);
+        final var result = converter.getAvailableCurrencies(codes);
 
-        assertInstanceOf(AvailableCurrenciesResult.Success.class, result, "Expected a successful currencies fetch");
-        var success = (AvailableCurrenciesResult.Success) result;
-        assertEquals(2, success.currencies().size());
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.Success.class)));
+
+        final var success = (AvailableCurrenciesResult.Success) result;
+        assertThat(success.currencies().size(), is(2));
     }
 
     @Test
     void shouldHandleInvalidCurrencyRejection() {
-        String mockJson = ExchangeRateApiFixtures.error("Invalid currency code");
+        final var mockJson = ExchangeRateApiFixtures.error("Invalid currency code");
         stubEndpointWithError(LATEST_ENDPOINT, 422, mockJson);
-        Money money = new Money(new BigDecimal("100"), EUR);
+        final var money = new Money(new BigDecimal("100"), EUR);
 
-        List<ConversionResult> results = converter.convert(money, List.of(USD));
+        final var results = converter.convert(money, List.of(USD));
 
-        assertInstanceOf(ConversionResult.Failure.class, results.getFirst());
+        assertThat(results.getFirst(), is(instanceOf(ConversionResult.Failure.class)));
     }
 
     @Test
     void shouldHandleInternalApiError() {
-        String mockErrorBody = """
+        final var mockErrorBody = """
                 Internal Server Error
                 """;
         stubEndpointWithError(LATEST_ENDPOINT, 500, mockErrorBody);
-        Money money = new Money(new BigDecimal("100"), EUR);
+        final var money = new Money(new BigDecimal("100"), EUR);
 
-        List<ConversionResult> results = converter.convert(money, List.of(USD));
+        final var result = converter.convert(money, USD);
 
-        assertInstanceOf(ConversionResult.Failure.class, results.getFirst(), "Should gracefully return a Failure object on 500 errors");
+        assertThat(result, is(instanceOf(ConversionResult.Failure.class)));
     }
 
     @Test
     void shouldHandleCurrencyFetchFailure() {
-        String mockErrorBody = """
+        final var mockErrorBody = """
                 Server Down
                 """;
         stubEndpointWithError(CURRENCIES_ENDPOINT, 500, mockErrorBody);
 
-        AvailableCurrenciesResult result = converter.getAvailableCurrencies(List.of("USD"));
+        final var result = converter.getAvailableCurrencies(List.of("USD"));
 
-        assertInstanceOf(AvailableCurrenciesResult.Failure.class, result, "Should return a Failure result when the API crashes");
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.Failure.class)));
     }
 
     @Test
     void shouldReturnAllAvailableCurrencies() {
-        String mockJson = ExchangeRateApiFixtures.currencies(List.of("USD", "EUR"));
+        final var mockJson = ExchangeRateApiFixtures.currencies(List.of("USD", "EUR"));
         stubAvailableCurrenciesSuccess("", mockJson);
 
-        AvailableCurrenciesResult result = converter.getAvailableCurrencies();
+        final var result = converter.getAvailableCurrencies();
 
-        assertInstanceOf(AvailableCurrenciesResult.Success.class, result);
-        assertEquals(2, ((AvailableCurrenciesResult.Success) result).currencies().size());
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.Success.class)));
+
+        final var success = (AvailableCurrenciesResult.Success) result;
+        assertThat(success.currencies().size(), is(2));
     }
-
 
     private void stubLiveRateSuccess(final String base, final String targets, final String jsonResponse) {
         wireMock.stubFor(get(urlPathEqualTo(LATEST_ENDPOINT))
@@ -176,7 +190,8 @@ class CurrencyConverterIntegrationTest {
                 .willReturn(okJson(jsonResponse)));
     }
 
-    private void stubHistoricalRateSuccess(final String base, final String targets, final String date, final String jsonResponse) {
+    private void stubHistoricalRateSuccess(final String base, final String targets, final String date,
+            final String jsonResponse) {
         wireMock.stubFor(get(urlPathEqualTo(HISTORICAL_ENDPOINT))
                 .withQueryParam("base_currency", equalTo(base))
                 .withQueryParam("currencies", equalTo(targets))

@@ -19,5 +19,7 @@ public record ApiError(ApiErrorCategory category, String message) {
         return new ApiError(category, formattedMsg);
     }
 
-
+    public static ApiError invalidResponseError() {
+        return new ApiError(ApiErrorCategory.INVALID_RESPONSE_ERROR, "The API payload is broken. Not our fault :]");
+    }
 }

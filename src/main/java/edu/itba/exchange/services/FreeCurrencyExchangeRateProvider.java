@@ -1,5 +1,6 @@
 package edu.itba.exchange.services;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -15,6 +16,7 @@ import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.FetchExceptionMapper;
+import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
 import edu.itba.exchange.services.dto.ExchangeRateResponse;
 import edu.itba.exchange.services.dto.HistoricalExchangeRateResponse;
@@ -25,22 +27,30 @@ import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
 
-import lombok.AllArgsConstructor;
-
-@AllArgsConstructor
 public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private final Fetch fetch;
-    private final PropertiesProvider propertiesProvider;
-    private final FetchExceptionMapper<CurrencyException> fetchExceptionMapper;
+    private final PropertiesProvider props;
+    private final FreeCurrencyFetchExceptionMapper mapper;
+
+    public FreeCurrencyExchangeRateProvider(final Fetch fetch, final PropertiesProvider props, final JSON json) {
+        this.fetch = fetch;
+        this.props = props;
+        this.mapper = new FreeCurrencyFetchExceptionMapper(json);
+    }
 
     @Override
     public List<Currency> getAvailableCurrencies() {
-        return getAvailableCurrencies(List.of());
+        return this.getAvailableCurrencies(List.of());
     }
 
     @Override
     public List<Currency> getAvailableCurrencies(final List<String> currencyCodes) {
-        return this.formCurrencyResponse(currencyCodes);
+        final var url = this.buildCurrenciesUrl(currencyCodes);
+        final ExchangeCurrenciesResponse response = this.fetchApi(url, ExchangeCurrenciesResponse.class);
+
+        return response.getData().keySet().stream()
+                .map(Currency::getInstance)
+                .toList();
     }
 
     @Override
@@ -50,67 +60,33 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public List<Rate> getRate(final Currency from, final List<Currency> to) {
-        return this.formRateResponse(from, to, null);
+        final var url = this.buildRateUrl(from, to);
+        final ExchangeRateResponse response = this.fetchApi(url, ExchangeRateResponse.class);
+
+        return response.getData().entrySet().stream()
+                .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
+                .toList();
     }
 
     @Override
-    public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate rateDate) {
-        return this.formRateResponse(from, to, rateDate);
-    }
+    public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate date) {
+        final var url = this.buildHistoricalRateUrl(from, to, date);
+        final HistoricalExchangeRateResponse response = this.fetchApi(url, HistoricalExchangeRateResponse.class);
 
-    private List<Rate> formRateResponse(final Currency from, final List<Currency> to, final LocalDate rateDate) {
-        final var url = this.buildRateUrl(from, to, rateDate);
-        final var options = this.getOptions();
-
-        if (rateDate != null) {
-            return getHistoricalRateList(from, url, options, rateDate);
+        if (!response.getData().containsKey(date)) {
+            throw new CurrencyNotFoundException(ApiError.invalidResponseError());
         }
 
-        return getLatestRateList(from, url, options);
+        return response.getData().get(date).entrySet().stream()
+                .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
+                .toList();
     }
 
-    private List<Rate> getLatestRateList(final Currency from, final URL url, final Fetch.Options options) {
+    private <T> T fetchApi(URL target, Type clazz) {
         try {
-            final ExchangeRateResponse response = fetch.getJson(url, options, ExchangeRateResponse.class);
-
-            return response.getData().entrySet().stream()
-                    .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
-                    .toList();
+            return this.fetch.getJson(target, this.getOptions(), clazz);
         } catch (final FetchException e) {
-            throw this.fetchExceptionMapper.translate(e);
-        }
-    }
-
-
-
-    private List<Rate> getHistoricalRateList(final Currency from, final URL url, final Fetch.Options options, final LocalDate rateDate) {
-        try {
-            final HistoricalExchangeRateResponse response = fetch.getJson(url, options, HistoricalExchangeRateResponse.class);
-
-            final Map<String, BigDecimal> dailyRates = response.getData().getOrDefault(rateDate.toString(), Map.of());
-
-            return dailyRates.entrySet().stream()
-                    .map(entry -> new Rate(from, Currency.getInstance(entry.getKey()), entry.getValue()))
-                    .toList();
-        } catch (final FetchException e) {
-            throw this.fetchExceptionMapper.translate(e);
-        }
-    }
-
-    private List<Currency> formCurrencyResponse(final List<String> currencyCodes) {
-        try {
-            final var url = this.buildCurrenciesUrl(currencyCodes);
-            final var options = this.getOptions();
-
-            final ExchangeCurrenciesResponse response = fetch.getJson(url, options, ExchangeCurrenciesResponse.class);
-
-            return response.getData().keySet().stream()
-                    .map(Currency::getInstance)
-                    .toList();
-        } catch (final FetchException e) {
-            throw this.fetchExceptionMapper.translate(e);
-        } catch (final IllegalArgumentException e) {
-            throw new CurrencyNotFoundException(new ApiError(ApiErrorCategory.CLIENT_ERROR, e.getMessage()));
+            throw this.mapper.translate(e);
         }
     }
 
@@ -119,30 +95,27 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         return this.getUrl("/v1/currencies", List.of(currencies));
     }
 
-    private URL buildRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
-        final var currencyCodesList = to.stream().map(Currency::getCurrencyCode).toList();
-        final var currencies = String.join(",", currencyCodesList);
+    private URL buildRateUrl(final Currency from, final List<Currency> to) {
+        final var currencyCodes = to.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", currencyCodes);
 
-        return rateDate != null
-                ? this.buildHistoricalRateUrl(from, currencies, rateDate)
-                : this.buildLatestRateUrl(from, currencies);
+        final var path = "/v1/latest";
+        final List<NameValuePair> queries = List.of(
+                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
+                new BasicNameValuePair("currencies", currencies));
+
+        return this.getUrl(path, queries);
     }
 
-    private URL buildHistoricalRateUrl(final Currency from, final String currencies, final LocalDate rateDate) {
+    private URL buildHistoricalRateUrl(final Currency from, final List<Currency> to, final LocalDate rateDate) {
+        final var currencyCodes = to.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", currencyCodes);
+
         final var path = "/v1/historical";
         final List<NameValuePair> queries = List.of(
                 new BasicNameValuePair("base_currency", from.getCurrencyCode()),
                 new BasicNameValuePair("currencies", currencies),
                 new BasicNameValuePair("date", rateDate.toString()));
-
-        return this.getUrl(path, queries);
-    }
-
-    private URL buildLatestRateUrl(final Currency from, final String currencies) {
-        final var path = "/v1/latest";
-        final List<NameValuePair> queries = List.of(
-                new BasicNameValuePair("base_currency", from.getCurrencyCode()),
-                new BasicNameValuePair("currencies", currencies));
 
         return this.getUrl(path, queries);
     }
@@ -157,17 +130,16 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .build().toURL();
         } catch (final MalformedURLException | URISyntaxException e) {
             throw new ExternalServiceException(
-                    new ApiError(ApiErrorCategory.CLIENT_ERROR, "Internal error building API URL"), e
-            );
+                    new ApiError(ApiErrorCategory.CLIENT_ERROR, "Internal error building API URL"), e);
         }
     }
 
     private String getApiBaseUrl() {
-        return this.propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_BASE_URL");
+        return this.props.get("FREE_CURRENCY_EXCHANGE_API_BASE_URL");
     }
 
     private String getApiToken() {
-        return this.propertiesProvider.get("FREE_CURRENCY_EXCHANGE_API_TOKEN");
+        return this.props.get("FREE_CURRENCY_EXCHANGE_API_TOKEN");
     }
 
     private Fetch.Options getOptions() {

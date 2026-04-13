@@ -90,7 +90,9 @@ class CurrencyConverterTest {
 	@Test
 	void testGetExchangeRate() {
 		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+
 		final var converter = new CurrencyConverter(provider);
+
 		assertThat(converter.getExchangeRate(EUR, USD), is(new ExchangeRateResult.Success(EUR_USD_RATE)));
 	}
 
@@ -106,7 +108,8 @@ class CurrencyConverterTest {
 	void testGetExchangeRateList() {
 		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
 		final var converter = new CurrencyConverter(provider);
-		assertThat(converter.getExchangeRate(EUR, List.of(USD)), is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE))));
+		assertThat(converter.getExchangeRate(EUR, List.of(USD)),
+				is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE))));
 	}
 
 	@Test
