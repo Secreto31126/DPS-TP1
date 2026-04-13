@@ -23,7 +23,7 @@ public class FreeCurrencyFetchExceptionMapper implements FetchExceptionMapper<Cu
             case HttpStatus.UNPROCESSABLE_ENTITY: {
                 final var body = e.getBody();
                 final ValidationErrorResponse parsed = this.json.parse(body, ValidationErrorResponse.class);
-                final var errors = parsed.getErrors();
+                final var errors = parsed != null ? parsed.getErrors() : null;
                 yield ValidationErrorException.fromErrors(errors);
             }
             case HttpStatus.TOO_MANY_REQUESTS: yield new RateLimitException();

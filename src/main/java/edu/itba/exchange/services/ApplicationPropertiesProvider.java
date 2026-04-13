@@ -13,8 +13,8 @@ public record ApplicationPropertiesProvider(Properties properties) implements Pr
     public ApplicationPropertiesProvider {
         try (final var in = new FileInputStream(FILE_PATH)) {
             properties.load(in);
-        } catch(IOException e) {
-            throw new RuntimeException(FILE_PATH+" not found!");
+        } catch (IOException e) {
+            throw new RuntimeException(FILE_PATH + " not found!");
         }
     }
 
