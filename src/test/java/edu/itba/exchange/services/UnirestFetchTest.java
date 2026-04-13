@@ -1,134 +1,143 @@
 package edu.itba.exchange.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
-import com.mashape.unirest.request.HttpRequestWithBody;
-import edu.itba.exchange.exceptions.ExternalServiceException;
-import edu.itba.exchange.interfaces.Fetch;
-import java.net.URL;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
+import edu.itba.exchange.exceptions.ExternalServiceException;
+import edu.itba.exchange.exceptions.FetchException;
+
+@ExtendWith(MockitoExtension.class)
 class UnirestFetchTest {
+    private static final UnirestFetch.Response SUCCESS = new UnirestFetch.Response("{}", 200);
+    private static final UnirestFetch.Response FAILURE = new UnirestFetch.Response("{}", 500);
+    private static final UnirestFetch.Response INVALID = new UnirestFetch.Response("  ", 200);
+
+    @Mock
+    private HttpResponse<String> http;
+
+    @Mock
+    private GetRequest request;
+
+    @Spy
+    private UnirestFetch fetch = new UnirestFetch(new GsonJSON());
 
     @Test
     void testUnirestOptions() {
-        UnirestFetch fetch = new UnirestFetch(new GsonJSON());
-        UnirestFetch.UnirestOptions options = (UnirestFetch.UnirestOptions) fetch.getOptions();
-        Fetch.Options returned = options.addHeader("key", "value");
-        assertSame(options, returned);
-        assertNotNull(options.getHeaders());
-        assertEquals("value", options.getHeaders().get("key"));
+        final var options = fetch.getOptions();
+
+        final var returned = options.addHeader("key", "value");
+
+        assertThat(returned, is(options));
+        assertThat(options.getHeaders(), not(nullValue()));
+        assertThat(options.getHeaders().get("key"), is("value"));
     }
 
     @Test
-    void testResponseRecord() {
-        UnirestFetch.Response resp = new UnirestFetch.Response("body", 200);
-        assertEquals("body", resp.body());
-        assertEquals(200, resp.status());
-        assertTrue(resp.ok());
+    void testResponseOk() {
+        final var body = "body";
+        final var status = 200;
+
+        final var resp = new UnirestFetch.Response(body, status);
+
+        assertThat(resp.body(), is(body));
+        assertThat(resp.status(), is(status));
+        assertThat(resp.ok(), is(true));
     }
 
     @Test
-    void testResponseConstructor() {
-        HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
-        when(mockHttpResponse.getBody()).thenReturn("body");
-        when(mockHttpResponse.getStatus()).thenReturn(200);
+    void testResponseErr() {
+        final var body = "error";
+        final var status = 500;
 
-        UnirestFetch.Response response = new UnirestFetch.Response(mockHttpResponse);
-        assertEquals("body", response.body());
-        assertEquals(200, response.status());
-        assertTrue(response.ok());
+        final var resp = new UnirestFetch.Response(body, status);
+
+        assertThat(resp.status(), is(status));
+        assertThat(resp.ok(), is(false));
     }
 
     @Test
-    void testResponseNotOk() {
-        UnirestFetch.Response response = new UnirestFetch.Response("error", 500);
-        assertFalse(response.ok());
+    void testResponseFromHttpResponse() {
+        when(http.getBody()).thenReturn("body");
+        when(http.getStatus()).thenReturn(200);
+
+        final var response = new UnirestFetch.Response(http);
+
+        assertThat(response.body(), is("body"));
+        assertThat(response.status(), is(200));
+        assertThat(response.ok(), is(true));
     }
 
     @Test
-    void testGetJsonFailure() throws Exception {
-        UnirestFetch spyFetch = spy(new UnirestFetch(new GsonJSON()));
-        Fetch.Response mockResponse = mock(Fetch.Response.class);
-        
-        when(mockResponse.ok()).thenReturn(false);
-        when(mockResponse.status()).thenReturn(500);
-        when(mockResponse.body()).thenReturn("Error");
-        
-        doReturn(mockResponse).when(spyFetch).get(any(), any());
-        
-        assertThrows(edu.itba.exchange.exceptions.FetchException.class, 
-            () -> spyFetch.getJson(new URL("http://localhost"), mock(Fetch.Options.class), String.class));
+    void testGetJsonNotOk() throws Exception {
+        final var url = URI.create("http://localhost").toURL();
+        final var opt = fetch.getOptions();
+        doReturn(FAILURE).when(fetch).get(eq(url), any());
+
+        assertThrows(FetchException.class, () -> fetch.getJson(url, opt, Map.class));
     }
 
     @Test
     void testGetJsonBlankBody() throws Exception {
-        UnirestFetch spyFetch = spy(new UnirestFetch(new GsonJSON()));
-        Fetch.Response mockResponse = mock(Fetch.Response.class);
-        
-        when(mockResponse.ok()).thenReturn(true);
-        when(mockResponse.body()).thenReturn("   "); // Blank body
-        
-        doReturn(mockResponse).when(spyFetch).get(any(), any());
-        
-        assertThrows(edu.itba.exchange.exceptions.FetchException.class, 
-            () -> spyFetch.getJson(new URL("http://localhost"), mock(Fetch.Options.class), String.class));
+        final var url = URI.create("http://localhost").toURL();
+        final var opt = fetch.getOptions();
+        doReturn(INVALID).when(fetch).get(eq(url), any());
+
+        assertThrows(FetchException.class, () -> fetch.getJson(url, opt, Map.class));
     }
 
     @Test
     void testFetchRequestException() throws Exception {
-        UnirestFetch fetch = new UnirestFetch(new GsonJSON());
-        URL target = new URL("http://localhost");
-        
-        try (MockedStatic<Unirest> mockedUnirest = mockStatic(Unirest.class)) {
-            GetRequest mockRequest = mock(GetRequest.class);
-            mockedUnirest.when(() -> Unirest.get(target.toString())).thenReturn(mockRequest);
-            when(mockRequest.headers(anyMap())).thenReturn(mockRequest);
-            when(mockRequest.asString()).thenThrow(new UnirestException("Failed"));
-            
-            assertThrows(ExternalServiceException.class, () -> fetch.get(target, fetch.getOptions()));
+        final var url = URI.create("http://localhost").toURL();
+
+        try (final var unirest = mockStatic(Unirest.class)) {
+            unirest.when(() -> Unirest.get(url.toString())).thenReturn(request);
+            when(request.headers(anyMap())).thenReturn(request);
+            when(request.asString()).thenThrow(new UnirestException("Failed"));
+
+            assertThrows(ExternalServiceException.class, () -> fetch.get(url, fetch.getOptions()));
         }
     }
 
     @Test
-    void testPostMethodException() throws Exception {
-        UnirestFetch fetch = new UnirestFetch(new GsonJSON());
-        URL target = new URL("http://localhost");
+    void testGetMethodSuccess() throws Exception {
+        final var url = URI.create("http://localhost").toURL();
 
-        try (MockedStatic<Unirest> mockedUnirest = mockStatic(Unirest.class)) {
-            HttpRequestWithBody mockRequest = mock(HttpRequestWithBody.class);
-            mockedUnirest.when(() -> Unirest.post(target.toString())).thenReturn(mockRequest);
-            when(mockRequest.headers(anyMap())).thenReturn(mockRequest);
-            when(mockRequest.asString()).thenThrow(new UnirestException("Failed"));
+        try (final var unirest = mockStatic(Unirest.class)) {
+            unirest.when(() -> Unirest.get(url.toString())).thenReturn(request);
+            when(request.headers(anyMap())).thenReturn(request);
+            when(request.asString()).thenReturn(http);
+            when(http.getBody()).thenReturn("ok");
+            when(http.getStatus()).thenReturn(200);
 
-            assertThrows(ExternalServiceException.class, () -> fetch.post(target, fetch.getOptions()));
+            final var response = fetch.get(url, fetch.getOptions());
+
+            assertThat(response.ok(), is(true));
+            assertThat(response.body(), is("ok"));
         }
     }
-
-    @Test
-    void testPostMethodSuccess() throws Exception {
-        UnirestFetch fetch = new UnirestFetch(new GsonJSON());
-        URL target = new URL("http://localhost");
-
-        try (MockedStatic<Unirest> mockedUnirest = mockStatic(Unirest.class)) {
-            HttpRequestWithBody mockRequest = mock(HttpRequestWithBody.class);
-            HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
-            mockedUnirest.when(() -> Unirest.post(target.toString())).thenReturn(mockRequest);
-            when(mockRequest.headers(anyMap())).thenReturn(mockRequest);
-            when(mockRequest.asString()).thenReturn(mockHttpResponse);
-            when(mockHttpResponse.getBody()).thenReturn("ok");
-            when(mockHttpResponse.getStatus()).thenReturn(200);
-
-            Fetch.Response response = fetch.post(target, fetch.getOptions());
-            assertTrue(response.ok());
-            assertEquals("ok", response.body());
-        }
-    }
-
 }
