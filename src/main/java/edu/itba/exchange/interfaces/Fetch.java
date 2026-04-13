@@ -29,15 +29,6 @@ public interface Fetch {
     <E> E getJson(final URL target, final Options options, Type clazz) throws FetchException;
 
     /**
-     * POST an endpoint
-     *
-     * @param target  The url to fetch
-     * @param options The request modifiers
-     * @return The response body
-     */
-    Response post(final URL target, final Options options);
-
-    /**
      * Provides an options object
      *
      * @apiNote I don't know how to feel about this

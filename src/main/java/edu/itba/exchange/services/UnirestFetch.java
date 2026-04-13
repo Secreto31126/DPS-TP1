@@ -41,16 +41,12 @@ public class UnirestFetch implements Fetch {
     }
 
     @Override
-    public Fetch.Response post(final URL target, final Options options) {
-        return this.fetchRequest(target, options, Unirest::post);
-    }
-
-    @Override
     public Fetch.Options getOptions() {
         return new UnirestOptions();
     }
 
-    private Fetch.Response fetchRequest(final URL target, final Options options, final Function<String, ? extends HttpRequest> request) {
+    private Fetch.Response fetchRequest(final URL target, final Options options,
+            final Function<String, ? extends HttpRequest> request) {
         try {
             final var response = request.apply(target.toString()).headers(options.getHeaders());
             return new Response(response.asString());
