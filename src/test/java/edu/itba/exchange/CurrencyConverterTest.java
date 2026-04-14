@@ -39,9 +39,6 @@ class CurrencyConverterTest {
     private static final Rate EUR_GBP_RATE = new Rate(EUR, GBP, "0.85");
     private static final LocalDate FIXED_DATE = LocalDate.of(2024, 1, 1);
     private static final Rate EUR_USD_RATE_HISTORICAL = new Rate(EUR, USD, "1.10", FIXED_DATE);
-    private static final ApiError NETWORK_ERROR = ApiError.networkError("fail");
-    private static final ApiError CLIENT_INPUT_ERROR = ApiError.fromHttpStatus(422, "");
-    private static final ApiError CLIENT_DATE_ERROR = ApiError.fromHttpStatus(422, "");
 
     // --- convert(Money, Currency) ---
 
