@@ -58,6 +58,21 @@ class CurrencyConverterTest {
         verify(provider).getRate(EUR, List.of(USD));
     }
 
+    @Test
+    void shouldReturnConnectionAbortOnConvertSingleCurrency() {
+        // Given
+        final var euros = new Money("100", EUR);
+        when(provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyConnectionException(null));
+
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.convert(euros, USD);
+
+        // Then
+        assertThat(result, is(instanceOf(ConversionResult.ConnectionAbort.class)));
+    }
+
     // --- convert(Money, List<Currency>) ---
 
     @Test

@@ -317,6 +317,17 @@ class FreeCurrencyExchangeRateProviderTest {
     }
 
     @Test
+    void testConnectionFailure() throws FetchException {
+        stubPropsAndOptions();
+
+        when(fetch.get(any(), any())).thenThrow(new FetchException(null));
+
+        final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
+
+        assertThrows(CurrencyConnectionException.class, () -> provider.getRate(USD, EUR));
+    }
+
+    @Test
     void testInvalidUrl() {
         when(props.get(eq("FREE_CURRENCY_EXCHANGE_API_BASE_URL"))).thenReturn("base url");
 
