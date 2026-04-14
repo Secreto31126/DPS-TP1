@@ -58,8 +58,8 @@ public class UnirestFetch implements Fetch {
     @Data
     @AllArgsConstructor
     public class Response implements Fetch.Response {
-        private String body;
-        private int status;
+        private final String body;
+        private final int status;
         protected Response(final HttpResponse<?> response) {
             this(response.getBody().toString(), response.getStatus());
         }
