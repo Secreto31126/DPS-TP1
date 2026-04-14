@@ -176,14 +176,16 @@ class CurrencyConverterTest {
     @Test
     void shouldGetExchangeRateList() {
         // Given
-        when(provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+        when(provider.getRate(EUR, List.of(USD, GBP))).thenReturn(List.of(EUR_USD_RATE, EUR_GBP_RATE));
         final var converter = new CurrencyConverter(provider);
 
         // When
-        final var results = converter.getExchangeRate(EUR, List.of(USD));
+        final var results = converter.getExchangeRate(EUR, List.of(USD, GBP));
 
         // Then
-        assertThat(results, is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE))));
+        assertThat(results, is(List.of(
+                new ExchangeRateResult.Success(EUR_USD_RATE),
+                new ExchangeRateResult.Success(EUR_GBP_RATE))));
     }
 
     @Test
