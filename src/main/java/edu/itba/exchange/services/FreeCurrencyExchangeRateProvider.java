@@ -1,31 +1,29 @@
 package edu.itba.exchange.services;
 
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Currency;
+import java.util.List;
 
-import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.exceptions.ApiErrorCategory;
-import edu.itba.exchange.exceptions.CurrencyException;
-import edu.itba.exchange.exceptions.CurrencyNotFoundException;
-import edu.itba.exchange.exceptions.ExternalServiceException;
-import edu.itba.exchange.exceptions.FetchException;
-import edu.itba.exchange.interfaces.ExchangeRateProvider;
-import edu.itba.exchange.interfaces.FetchExceptionMapper;
-import edu.itba.exchange.interfaces.JSON;
-import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
-import edu.itba.exchange.services.dto.ExchangeRateResponse;
-import edu.itba.exchange.services.dto.HistoricalExchangeRateResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
+
+import edu.itba.exchange.exceptions.ApiError;
+import edu.itba.exchange.exceptions.ApiErrorCategory;
+import edu.itba.exchange.exceptions.ExternalServiceException;
+import edu.itba.exchange.exceptions.FetchException;
+import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
+import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
+import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
+import edu.itba.exchange.services.dto.ExchangeRateResponse;
+import edu.itba.exchange.services.dto.HistoricalExchangeRateResponse;
 
 public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private final Fetch fetch;
@@ -72,10 +70,6 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     public List<Rate> getRate(final Currency from, final List<Currency> to, final LocalDate date) {
         final var url = this.buildHistoricalRateUrl(from, to, date);
         final HistoricalExchangeRateResponse response = this.fetchApi(url, HistoricalExchangeRateResponse.class);
-
-        if (!response.getData().containsKey(date)) {
-            throw new CurrencyNotFoundException(ApiError.invalidResponseError());
-        }
 
         return response.getData().get(date).entrySet().stream()
                 .map(entry -> new Rate(from, entry.getKey(), entry.getValue(), date))
