@@ -241,7 +241,7 @@ class CurrencyConverterTest {
     @Test
     void shouldGetAvailableCurrenciesWithFilter() {
         // Given
-        final var filter = List.of("USD");
+        final var filter = List.of(USD);
         when(provider.getAvailableCurrencies(filter)).thenReturn(List.of(USD));
         final var converter = new CurrencyConverter(provider);
 
@@ -268,7 +268,7 @@ class CurrencyConverterTest {
     @Test
     void shouldReturnFailureWhenGetAvailableCurrenciesWithFilterThrows() {
         // Given
-        final var filter = List.of("XYZ");
+        final var filter = List.of(ARS);
         when(provider.getAvailableCurrencies(filter)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
         final var converter = new CurrencyConverter(provider);
 

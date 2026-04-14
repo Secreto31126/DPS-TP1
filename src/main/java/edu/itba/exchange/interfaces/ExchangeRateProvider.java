@@ -14,5 +14,5 @@ public interface ExchangeRateProvider {
 
     List<Currency> getAvailableCurrencies();
 
-    List<Currency> getAvailableCurrencies(final List<String> currencyCodes);
+    List<Currency> getAvailableCurrencies(final List<Currency> currencyCodes);
 }

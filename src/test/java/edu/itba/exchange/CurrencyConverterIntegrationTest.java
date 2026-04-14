@@ -122,7 +122,7 @@ class CurrencyConverterIntegrationTest {
 
     @Test
     void shouldReturnAvailableCurrencies() {
-        final var codes = List.of("USD", "EUR");
+        final var codes = List.of(USD, EUR);
         final var mockJson = ExchangeRateApiFixtures.currencies(codes);
         stubAvailableCurrenciesSuccess("USD,EUR", mockJson);
 
@@ -165,14 +165,14 @@ class CurrencyConverterIntegrationTest {
                 """;
         stubEndpointWithError(CURRENCIES_ENDPOINT, 500, mockErrorBody);
 
-        final var result = converter.getAvailableCurrencies(List.of("USD"));
+        final var result = converter.getAvailableCurrencies(List.of(USD));
 
         assertThat(result, is(instanceOf(AvailableCurrenciesResult.Failure.class)));
     }
 
     @Test
     void shouldReturnAllAvailableCurrencies() {
-        final var mockJson = ExchangeRateApiFixtures.currencies(List.of("USD", "EUR"));
+        final var mockJson = ExchangeRateApiFixtures.currencies(List.of(USD, EUR));
         stubAvailableCurrenciesSuccess("", mockJson);
 
         final var result = converter.getAvailableCurrencies();

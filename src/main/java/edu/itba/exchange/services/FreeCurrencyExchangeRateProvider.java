@@ -90,9 +90,12 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
     }
 
-    private URL buildCurrenciesUrl(final List<String> currencyCodes) {
-        final var currencies = new BasicNameValuePair("currencies", String.join(",", currencyCodes));
-        return this.getUrl("/v1/currencies", List.of(currencies));
+    private URL buildCurrenciesUrl(final List<Currency> currencyCodes) {
+        final var codes = currencyCodes.stream().map(Currency::getCurrencyCode).toList();
+        final var currencies = String.join(",", codes);
+        final var param = new BasicNameValuePair("currencies", currencies);
+
+        return this.getUrl("/v1/currencies", List.of(param));
     }
 
     private URL buildRateUrl(final Currency from, final List<Currency> to) {

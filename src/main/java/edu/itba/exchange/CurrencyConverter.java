@@ -20,7 +20,7 @@ public class CurrencyConverter {
         return this.getAvailableCurrencies(List.of());
     }
 
-    public AvailableCurrenciesResult getAvailableCurrencies(final List<String> currencyCodes) {
+    public AvailableCurrenciesResult getAvailableCurrencies(final List<Currency> currencyCodes) {
         try {
             final var currencies = this.provider.getAvailableCurrencies(currencyCodes);
             return new AvailableCurrenciesResult.Success(currencies);
