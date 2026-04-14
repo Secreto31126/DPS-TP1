@@ -76,13 +76,13 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private <T> T fetchApi(URL target, Type clazz) {
         try {
             final var response = this.fetch.get(target, this.getOptions());
-            if(response.ok()){
-                return response.json(clazz);
-            }
-            else{
+
+            if (!response.ok()) {
                 throw this.mapper.translate(response);
             }
-        }catch (FetchException e){
+
+            return response.json(clazz);
+        } catch (FetchException e) {
             throw new CurrencyConnectionException(e);
         }
     }
