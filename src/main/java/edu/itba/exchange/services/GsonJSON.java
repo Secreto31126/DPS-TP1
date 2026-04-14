@@ -12,7 +12,6 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.JSON;
 
 public class GsonJSON implements JSON {
@@ -24,10 +23,10 @@ public class GsonJSON implements JSON {
     public <E> E parse(final String in, final Type type) {
         try {
             return GsonJSON.gson.fromJson(in, type);
-        }catch (JsonSyntaxException e){
-            throw new IllegalArgumentException("");
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Failed to parse target input.");
         }
-        }
+    }
 
     @Override
     public String stringify(final Object type) {
