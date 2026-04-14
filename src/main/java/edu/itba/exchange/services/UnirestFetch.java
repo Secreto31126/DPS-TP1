@@ -23,7 +23,7 @@ public class UnirestFetch implements Fetch {
     private final JSON jsonService;
 
     @Override
-    public Fetch.Response get(final URL target, final Options options) throws FetchException{
+    public Fetch.Response get(final URL target, final Options options) throws FetchException {
         return this.fetchRequest(target, options, Unirest::get);
     }
 
@@ -68,8 +68,8 @@ public class UnirestFetch implements Fetch {
             return this.status / 100 == 2;
         }
 
-        public <E> E json(Type type){
-            return jsonService.parse(this.body,type);
+        public <E> E json(Type type) {
+            return jsonService.parse(this.body, type);
         }
     }
 }
