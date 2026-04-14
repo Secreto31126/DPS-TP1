@@ -36,7 +36,8 @@ public class ExchangeRateApiFixtures {
 
     /**
      * Generates a response for the supported currencies list.
-     * Example: {@code { "data": { "USD": { "code": "USD" }, "EUR": { "code": "EUR" } } }}
+     * Example:
+     * {@code { "data": { "USD": { "code": "USD" }, "EUR": { "code": "EUR" } } }}
      *
      * @param codes A list of currency ISO codes.
      * @return A JSON string formatted for the /v1/currencies endpoint.
@@ -46,8 +47,7 @@ public class ExchangeRateApiFixtures {
                 .map(Currency::getCurrencyCode)
                 .collect(Collectors.toMap(
                         code -> code,
-                        code -> Map.of("code", code)
-                ));
+                        code -> Map.of("code", code)));
         return gson.toJson(Map.of("data", data));
     }
 

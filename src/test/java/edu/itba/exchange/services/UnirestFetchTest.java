@@ -47,7 +47,6 @@ class UnirestFetchTest {
         fetch = spy(new UnirestFetch(json));
     }
 
-
     @Test
     void shouldReportOkForSuccessStatus() {
         // Given
@@ -99,8 +98,6 @@ class UnirestFetchTest {
         assertThat(response.ok(), is(true));
     }
 
-
-
     @Test
     void shouldReturnSelfOnAddHeader() {
         // Given
@@ -124,8 +121,6 @@ class UnirestFetchTest {
         // Then
         assertThat(options.getHeaders().get("Authorization"), is("Bearer token"));
     }
-
-
 
     @Test
     void shouldReturnResponseOnSuccessfulGet() throws Exception {
