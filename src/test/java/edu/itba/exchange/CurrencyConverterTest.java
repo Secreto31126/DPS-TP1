@@ -1,11 +1,11 @@
 package edu.itba.exchange;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
@@ -22,120 +22,260 @@ import edu.itba.exchange.interfaces.ExchangeRateProvider;
 
 @ExtendWith(MockitoExtension.class)
 class CurrencyConverterTest {
-	@Mock
-	private ExchangeRateProvider provider;
+    @Mock
+    private ExchangeRateProvider provider;
 
-	private static final Currency USD = Currency.getInstance("USD");
-	private static final Currency EUR = Currency.getInstance("EUR");
-	private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
+    private static final Currency USD = Currency.getInstance("USD");
+    private static final Currency EUR = Currency.getInstance("EUR");
+    private static final Currency GBP = Currency.getInstance("GBP");
+    private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
+    private static final Rate EUR_GBP_RATE = new Rate(EUR, GBP, "0.85");
+    private static final LocalDate FIXED_DATE = LocalDate.of(2024, 1, 1);
+    private static final Rate EUR_USD_RATE_HISTORICAL = new Rate(EUR, USD, "1.10", FIXED_DATE);
+    private static final ApiError NETWORK_ERROR = ApiError.networkError("fail");
 
-	@Test
-	void testConvert() throws MalformedURLException, URISyntaxException {
-		// Given
-		final var euros = new Money("100", EUR);
-		final var dolars = new Money("105.00", USD);
+    // --- convert(Money, Currency) ---
 
-		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+    @Test
+    void shouldConvertSingleCurrency() {
+        // Given
+        final var euros = new Money("100", EUR);
+        final var expectedDollars = new Money("105.00", USD);
+        when(provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+        final var converter = new CurrencyConverter(provider);
 
-		final var converter = new CurrencyConverter(provider);
+        // When
+        final var result = converter.convert(euros, USD);
 
-		// When
-		final var result = converter.convert(euros, USD);
+        // Then
+        assertThat(result, is(new ConversionResult.Success(expectedDollars, EUR_USD_RATE)));
+        verify(provider).getRate(EUR, List.of(USD));
+    }
 
-		// Then
-		assertThat(result, is(new ConversionResult.Success(dolars, EUR_USD_RATE)));
-	}
+    // --- convert(Money, List<Currency>) ---
 
-	@Test
-	void testHistoricalConvert() {
-		// Given
-		final var euros = new Money("100", EUR);
-		final var date = LocalDate.of(2024, 1, 1);
-		final var historicalRate = new Rate(EUR, USD, "1.10", date);
-		final var dollars = new Money("110.00", USD);
+    @Test
+    void shouldConvertMultipleCurrencies() {
+        // Given
+        final var euros = new Money("100", EUR);
+        when(provider.getRate(EUR, List.of(USD, GBP))).thenReturn(List.of(EUR_USD_RATE, EUR_GBP_RATE));
+        final var converter = new CurrencyConverter(provider);
 
-		when(this.provider.getRate(EUR, List.of(USD), date)).thenReturn(List.of(historicalRate));
+        // When
+        final var results = converter.convert(euros, List.of(USD, GBP));
 
-		final var converter = new CurrencyConverter(provider);
+        // Then
+        assertThat(results, hasSize(2));
+        assertThat(results.get(0), is(new ConversionResult.Success(new Money("105.00", USD), EUR_USD_RATE)));
+        assertThat(results.get(1), is(new ConversionResult.Success(new Money("85.00", GBP), EUR_GBP_RATE)));
+        verify(provider).getRate(EUR, List.of(USD, GBP));
+    }
 
-		// When
-		final var result = converter.convert(euros, USD, date);
+    @Test
+    void shouldReturnFailureWhenConvertThrows() {
+        // Given
+        final var euros = new Money("100", EUR);
+        when(provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
 
-		// Then
-		assertThat(result, is(new ConversionResult.Success(dollars, historicalRate)));
-	}
+        // When
+        final var results = converter.convert(euros, List.of(USD));
 
-	@Test
-	void testConvertList() {
-		final var euros = new Money("100", EUR);
-		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
-		final var converter = new CurrencyConverter(provider);
+        // Then
+        assertThat(results.getFirst(), is(new ConversionResult.Failure(NETWORK_ERROR)));
+    }
 
-		final var results = converter.convert(euros, List.of(USD));
-		assertThat(results.size(), is(1));
-		assertThat(results.getFirst(), is(new ConversionResult.Success(new Money("105.00", USD), EUR_USD_RATE)));
-	}
+    // --- convert(Money, Currency, LocalDate) ---
 
-	@Test
-	void testConvertFailure() {
-		final var euros = new Money("100", EUR);
-		final var error = ApiError.networkError("fail");
-		when(this.provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(error));
-		final var converter = new CurrencyConverter(provider);
+    @Test
+    void shouldConvertSingleCurrencyWithDate() {
+        // Given
+        final var euros = new Money("100", EUR);
+        final var expectedDollars = new Money("110.00", USD);
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenReturn(List.of(EUR_USD_RATE_HISTORICAL));
+        final var converter = new CurrencyConverter(provider);
 
-		final var results = converter.convert(euros, List.of(USD));
-		assertThat(results.getFirst(), is(new ConversionResult.Failure(error)));
-	}
+        // When
+        final var result = converter.convert(euros, USD, FIXED_DATE);
 
-	@Test
-	void testGetExchangeRate() {
-		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+        // Then
+        assertThat(result, is(new ConversionResult.Success(expectedDollars, EUR_USD_RATE_HISTORICAL)));
+    }
 
-		final var converter = new CurrencyConverter(provider);
+    // --- convert(Money, List<Currency>, LocalDate) ---
 
-		assertThat(converter.getExchangeRate(EUR, USD), is(new ExchangeRateResult.Success(EUR_USD_RATE)));
-	}
+    @Test
+    void shouldConvertMultipleCurrenciesWithDate() {
+        // Given
+        final var euros = new Money("100", EUR);
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenReturn(List.of(EUR_USD_RATE_HISTORICAL));
+        final var converter = new CurrencyConverter(provider);
 
-	@Test
-	void testGetExchangeRateWithDate() {
-		final var date = LocalDate.now();
-		when(this.provider.getRate(EUR, List.of(USD), date)).thenReturn(List.of(EUR_USD_RATE));
-		final var converter = new CurrencyConverter(provider);
-		assertThat(converter.getExchangeRate(EUR, USD, date), is(new ExchangeRateResult.Success(EUR_USD_RATE)));
-	}
+        // When
+        final var results = converter.convert(euros, List.of(USD), FIXED_DATE);
 
-	@Test
-	void testGetExchangeRateList() {
-		when(this.provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
-		final var converter = new CurrencyConverter(provider);
-		assertThat(converter.getExchangeRate(EUR, List.of(USD)),
-				is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE))));
-	}
+        // Then
+        assertThat(results.size(), is(1));
+        assertThat(results.getFirst(), is(new ConversionResult.Success(new Money("110.00", USD), EUR_USD_RATE_HISTORICAL)));
+    }
 
-	@Test
-	void testGetExchangeRateFailure() {
-		final var error = ApiError.networkError("fail");
-		when(this.provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(error));
-		final var converter = new CurrencyConverter(provider);
+    @Test
+    void shouldReturnFailureWhenConvertWithDateThrows() {
+        // Given
+        final var euros = new Money("100", EUR);
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
 
-		final var results = converter.getExchangeRate(EUR, List.of(USD));
-		assertThat(results.getFirst(), is(new ExchangeRateResult.Failure(error)));
-	}
+        // When
+        final var results = converter.convert(euros, List.of(USD), FIXED_DATE);
 
-	@Test
-	void testGetAvailableCurrencies() {
-		when(this.provider.getAvailableCurrencies(List.of())).thenReturn(List.of(USD));
-		final var converter = new CurrencyConverter(provider);
+        // Then
+        assertThat(results.getFirst(), is(new ConversionResult.Failure(NETWORK_ERROR)));
+    }
 
-		assertThat(converter.getAvailableCurrencies(), is(new AvailableCurrenciesResult.Success(List.of(USD))));
-	}
+    // --- getExchangeRate(Currency, Currency) ---
 
-	@Test
-	void testGetAvailableCurrenciesFailure() {
-		final var error = ApiError.networkError("fail");
-		when(this.provider.getAvailableCurrencies(List.of())).thenThrow(new CurrencyNotFoundException(error));
-		final var converter = new CurrencyConverter(provider);
+    @Test
+    void shouldGetExchangeRate() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+        final var converter = new CurrencyConverter(provider);
 
-		assertThat(converter.getAvailableCurrencies(), is(new AvailableCurrenciesResult.Failure(error)));
-	}
+        // When
+        final var result = converter.getExchangeRate(EUR, USD);
+
+        // Then
+        assertThat(result, is(new ExchangeRateResult.Success(EUR_USD_RATE)));
+        verify(provider).getRate(EUR, List.of(USD));
+    }
+
+    // --- getExchangeRate(Currency, List<Currency>) ---
+
+    @Test
+    void shouldGetExchangeRateList() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD))).thenReturn(List.of(EUR_USD_RATE));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(USD));
+
+        // Then
+        assertThat(results, is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE))));
+    }
+
+    @Test
+    void shouldReturnFailureWhenGetExchangeRateThrows() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(USD));
+
+        // Then
+        assertThat(results.getFirst(), is(new ExchangeRateResult.Failure(NETWORK_ERROR)));
+    }
+
+    // --- getExchangeRate(Currency, Currency, LocalDate) ---
+
+    @Test
+    void shouldGetExchangeRateWithDate() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenReturn(List.of(EUR_USD_RATE_HISTORICAL));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getExchangeRate(EUR, USD, FIXED_DATE);
+
+        // Then
+        assertThat(result, is(new ExchangeRateResult.Success(EUR_USD_RATE_HISTORICAL)));
+    }
+
+    // --- getExchangeRate(Currency, List<Currency>, LocalDate) ---
+
+    @Test
+    void shouldGetExchangeRateListWithDate() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenReturn(List.of(EUR_USD_RATE_HISTORICAL));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(USD), FIXED_DATE);
+
+        // Then
+        assertThat(results, is(List.of(new ExchangeRateResult.Success(EUR_USD_RATE_HISTORICAL))));
+    }
+
+    @Test
+    void shouldReturnFailureWhenGetExchangeRateWithDateThrows() {
+        // Given
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(USD), FIXED_DATE);
+
+        // Then
+        assertThat(results.getFirst(), is(new ExchangeRateResult.Failure(NETWORK_ERROR)));
+    }
+
+    // --- getAvailableCurrencies() ---
+
+    @Test
+    void shouldGetAvailableCurrencies() {
+        // Given
+        when(provider.getAvailableCurrencies(List.of())).thenReturn(List.of(USD));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getAvailableCurrencies();
+
+        // Then
+        assertThat(result, is(new AvailableCurrenciesResult.Success(List.of(USD))));
+        verify(provider).getAvailableCurrencies(List.of());
+    }
+
+    // --- getAvailableCurrencies(List<String>) ---
+
+    @Test
+    void shouldGetAvailableCurrenciesWithFilter() {
+        // Given
+        final var filter = List.of("USD");
+        when(provider.getAvailableCurrencies(filter)).thenReturn(List.of(USD));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getAvailableCurrencies(filter);
+
+        // Then
+        assertThat(result, is(new AvailableCurrenciesResult.Success(List.of(USD))));
+    }
+
+    @Test
+    void shouldReturnFailureWhenGetAvailableCurrenciesThrows() {
+        // Given
+        when(provider.getAvailableCurrencies(List.of())).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getAvailableCurrencies();
+
+        // Then
+        assertThat(result, is(new AvailableCurrenciesResult.Failure(NETWORK_ERROR)));
+    }
+
+    @Test
+    void shouldReturnFailureWhenGetAvailableCurrenciesWithFilterThrows() {
+        // Given
+        final var filter = List.of("XYZ");
+        when(provider.getAvailableCurrencies(filter)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getAvailableCurrencies(filter);
+
+        // Then
+        assertThat(result, is(new AvailableCurrenciesResult.Failure(NETWORK_ERROR)));
+    }
 }

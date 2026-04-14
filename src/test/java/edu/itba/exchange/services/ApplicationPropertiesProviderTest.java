@@ -4,30 +4,32 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Properties;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 class ApplicationPropertiesProviderTest {
+
     @Test
     void shouldLoadPropertiesSuccessfully() {
+        // Given
         final var provider = new ApplicationPropertiesProvider();
 
+        // When / Then
         assertThat(provider.get("PROP1"), is("VAL1"));
         assertThat(provider.get("PROP2"), is("VAL2"));
     }
 
     @Test
-    void shouldThrowExceptionWhenPropertyNotFound() {
+    void shouldThrowWhenPropertyNotFound() {
+        // Given
         final var provider = new ApplicationPropertiesProvider();
 
+        // When / Then
         assertThrows(NullPointerException.class, () -> provider.get("NON_EXISTENT_PROPERTY"));
     }
 
     @Test
-    void shouldThrowExceptionWhenFileNotFound() {
+    void shouldThrowWhenFileNotFound() {
+        // When / Then
         assertThrows(IllegalStateException.class, () -> new ApplicationPropertiesProvider("fake.properties"));
     }
 }

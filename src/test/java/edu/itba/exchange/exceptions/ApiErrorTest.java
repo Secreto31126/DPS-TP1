@@ -1,36 +1,56 @@
 package edu.itba.exchange.exceptions;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class ApiErrorTest {
 
     @Test
     void shouldCreateNetworkError() {
-        ApiError error = ApiError.networkError("Connection failed");
-        assertEquals(ApiErrorCategory.NETWORK_ERROR, error.category());
-        assertEquals("Connection failed", error.message());
+        // Given
+        final var message = "Connection failed";
+
+        // When
+        final var error = ApiError.networkError(message);
+
+        // Then
+        assertThat(error.category(), is(ApiErrorCategory.NETWORK_ERROR));
+        assertThat(error.message(), is(message));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "400, CLIENT_ERROR",
+            "404, CLIENT_ERROR",
+            "499, CLIENT_ERROR",
+            "500, SERVER_ERROR",
+            "503, SERVER_ERROR",
+            "599, SERVER_ERROR",
+            "199, UNKNOWN_ERROR",
+            "200, UNKNOWN_ERROR",
+            "302, UNKNOWN_ERROR"
+    })
+    void shouldClassifyStatusByClass(int status, ApiErrorCategory expected) {
+        // When
+        final var error = ApiError.fromHttpStatus(status, "msg");
+
+        // Then
+        assertThat(error.category(), is(expected));
+        assertThat(error.message(), containsString(String.valueOf(status)));
     }
 
     @Test
-    void shouldMapClientErrorClass() {
-        ApiError error = ApiError.fromHttpStatus(404, "Not Found");
-        assertEquals(ApiErrorCategory.CLIENT_ERROR, error.category());
-        assertTrue(error.message().contains("404"));
-    }
+    void shouldCreateInvalidResponseError() {
+        // When
+        final var error = ApiError.invalidResponseError();
 
-    @Test
-    void shouldMapServerErrorClass() {
-        ApiError error = ApiError.fromHttpStatus(500, "Internal Server Error");
-        assertEquals(ApiErrorCategory.SERVER_ERROR, error.category());
-        assertTrue(error.message().contains("500"));
-    }
-
-    @Test
-    void shouldMapUnknownErrorClass() {
-        ApiError error = ApiError.fromHttpStatus(302, "Redirect");
-        assertEquals(ApiErrorCategory.UNKNOWN_ERROR, error.category());
-        assertTrue(error.message().contains("302"));
+        // Then
+        assertThat(error.category(), is(ApiErrorCategory.INVALID_RESPONSE_ERROR));
+        assertThat(error.message(), containsString("broken"));
     }
 }
