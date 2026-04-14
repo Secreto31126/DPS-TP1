@@ -16,8 +16,6 @@ public interface Fetch {
      */
     Response get(final URL target, final Options options) throws FetchException;
 
-
-
     /**
      * Provides an options object
      *
@@ -72,11 +70,12 @@ public interface Fetch {
          * @return True if the status code is 2XX
          */
         boolean ok();
+
         /**
          * Read JSON body
          *
-         * @param <E>     The response json
-         * @param clazz   The json structure
+         * @param <E>   The response json
+         * @param clazz The json structure
          * @return The json response parsed
          * @throws IllegalArgumentException on invalid input or type
          */

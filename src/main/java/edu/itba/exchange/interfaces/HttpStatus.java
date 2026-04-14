@@ -1,8 +1,8 @@
 package edu.itba.exchange.interfaces;
 
 public final class HttpStatus {
-
-    private HttpStatus() {}
+    private HttpStatus() {
+    }
 
     public static final int UNAUTHORIZED = 401;
     public static final int FORBIDDEN = 403;

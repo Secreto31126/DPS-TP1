@@ -16,7 +16,7 @@ public class ApplicationPropertiesProvider implements PropertiesProvider {
         } catch (final IOException | NullPointerException e) {
             throw new IllegalStateException(path + " not found!");
         }
-        this.properties=properties;
+        this.properties = properties;
     }
 
     public ApplicationPropertiesProvider(final String path) {
