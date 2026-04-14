@@ -1,11 +1,11 @@
 package edu.itba.exchange.services.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.Map;
+
+import lombok.Data;
 
 @Data
 public class HistoricalExchangeRateResponse {

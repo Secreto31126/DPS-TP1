@@ -1,12 +1,13 @@
 package edu.itba.exchange.models;
 
-import edu.itba.exchange.exceptions.ApiError;
-
 import java.util.Currency;
 import java.util.List;
 
+import edu.itba.exchange.exceptions.ApiError;
+
 public sealed interface AvailableCurrenciesResult
-        permits AvailableCurrenciesResult.Success, AvailableCurrenciesResult.Failure, AvailableCurrenciesResult.ConnectionAbort {
+        permits AvailableCurrenciesResult.Success, AvailableCurrenciesResult.Failure,
+        AvailableCurrenciesResult.ConnectionAbort {
 
     record Success(List<Currency> currencies) implements AvailableCurrenciesResult {
     }

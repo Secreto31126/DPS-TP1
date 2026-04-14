@@ -11,20 +11,21 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
-import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
-import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
-import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
-import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
-import edu.itba.exchange.models.*;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
+import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
+import edu.itba.exchange.models.AvailableCurrenciesResult;
+import edu.itba.exchange.models.ConversionResult;
+import edu.itba.exchange.models.ExchangeRateResult;
+import edu.itba.exchange.models.Money;
+import edu.itba.exchange.models.Rate;
 
 @ExtendWith(MockitoExtension.class)
 class CurrencyConverterTest {

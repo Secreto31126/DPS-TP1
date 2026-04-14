@@ -1,16 +1,20 @@
 package edu.itba.exchange;
 
+import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.time.LocalDate;
 
 import edu.itba.exchange.exceptions.ApiError;
 import edu.itba.exchange.exceptions.CurrencyException;
 import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
-import edu.itba.exchange.models.*;
+import edu.itba.exchange.models.AvailableCurrenciesResult;
+import edu.itba.exchange.models.ConversionResult;
+import edu.itba.exchange.models.ExchangeRateResult;
+import edu.itba.exchange.models.Money;
+import edu.itba.exchange.models.Rate;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

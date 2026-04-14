@@ -1,13 +1,13 @@
 package edu.itba.exchange.exceptions.freecurrency;
 
+import java.util.Map;
+
 import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.interfaces.HttpStatus;
 import edu.itba.exchange.exceptions.CurrencyException;
 import edu.itba.exchange.exceptions.freecurrency.validation.InvalidBaseCurrencyException;
 import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
 import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
-
-import java.util.Map;
+import edu.itba.exchange.interfaces.HttpStatus;
 
 public class ValidationErrorException extends CurrencyException {
     private static final String MESSAGE = "Validation error, please check the list of validation errors.";
