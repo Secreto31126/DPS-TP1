@@ -12,6 +12,7 @@ import java.util.Currency;
 import java.util.List;
 
 import edu.itba.exchange.exceptions.ApiError;
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
 import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
 import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
@@ -186,6 +187,19 @@ class CurrencyConverterTest {
         assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.Failure.class)));
     }
 
+    @Test
+    void shouldReturnConnectionAbortOnGetExchangeRate() {
+        // Given
+        when(provider.getRate(EUR, List.of(ARS))).thenThrow(new CurrencyConnectionException(new Exception()));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(ARS));
+
+        // Then
+        assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.ConnectionAbort.class)));
+    }
+
     // --- getExchangeRate(Currency, Currency, LocalDate) ---
 
     @Test
@@ -227,6 +241,19 @@ class CurrencyConverterTest {
 
         // Then
         assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.Failure.class)));
+    }
+
+    @Test
+    void shouldReturnConnectionAbortOnGetRate() {
+        // Given
+        when(provider.getRate(EUR, List.of(ARS), FIXED_DATE)).thenThrow(new CurrencyConnectionException(new Exception()));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var results = converter.getExchangeRate(EUR, List.of(ARS), FIXED_DATE);
+
+        // Then
+        assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.ConnectionAbort.class)));
     }
 
     // --- getAvailableCurrencies() ---
@@ -286,5 +313,19 @@ class CurrencyConverterTest {
 
         // Then
         assertThat(result, is(instanceOf(AvailableCurrenciesResult.Failure.class)));
+    }
+
+    @Test
+    void shouldReturnConnectionAbortOnGetAvailableCurrencies() {
+        // Given
+        final var filter = List.of(ARS);
+        when(provider.getAvailableCurrencies(filter)).thenThrow(new CurrencyConnectionException(new Exception()));
+        final var converter = new CurrencyConverter(provider);
+
+        // When
+        final var result = converter.getAvailableCurrencies(filter);
+
+        // Then
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.ConnectionAbort.class)));
     }
 }

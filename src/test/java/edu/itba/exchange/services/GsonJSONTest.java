@@ -53,6 +53,6 @@ class GsonJSONTest {
     @Test
     void shouldThrowWhenParsingMalformedJson() {
         // When / Then
-        assertThrows(JsonSyntaxException.class, () -> json.parse("not valid json", Payload.class));
+        assertThrows(IllegalArgumentException.class, () -> json.parse("not valid json", Payload.class));
     }
 }

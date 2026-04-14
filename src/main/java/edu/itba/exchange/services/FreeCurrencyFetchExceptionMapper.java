@@ -1,5 +1,6 @@
 package edu.itba.exchange.services;
 
+import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.HttpStatus;
 
 import java.util.Map;
@@ -13,11 +14,9 @@ import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.services.dto.ValidationErrorResponse;
 import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class FreeCurrencyFetchExceptionMapper implements FetchExceptionMapper<CurrencyException> {
-    private final JSON json;
 
-    private final Map<Integer, Function<FetchException, CurrencyException>> mapper = Map.of(
+    private final Map<Integer, Function<Fetch.Response, CurrencyException>> mapper = Map.of(
             HttpStatus.UNAUTHORIZED, _ -> new InvalidCredentialsException(),
             HttpStatus.FORBIDDEN, _ -> new ForbiddenException(),
             HttpStatus.NOT_FOUND, _ -> new EndpointNotFoundException(),
@@ -25,13 +24,13 @@ public class FreeCurrencyFetchExceptionMapper implements FetchExceptionMapper<Cu
             HttpStatus.TOO_MANY_REQUESTS, _ -> new RateLimitException());
 
     @Override
-    public CurrencyException translate(FetchException e) {
-        final var status = e.getStatus();
-        return mapper.getOrDefault(status, _ -> new InternalServerErrorException()).apply(e);
+    public CurrencyException translate(Fetch.Response response) {
+        final var status = response.getStatus();
+        return mapper.getOrDefault(status, _ -> new InternalServerErrorException()).apply(response);
     }
 
-    private CurrencyException unprocessableExceptionMapper(final FetchException e) {
-        final ValidationErrorResponse parsed = this.json.parse(e.getMessage(), ValidationErrorResponse.class);
+    private CurrencyException unprocessableExceptionMapper(final Fetch.Response response) {
+        final ValidationErrorResponse parsed = response.json(ValidationErrorResponse.class);
         final var errors = parsed != null ? parsed.getErrors() : null;
         return ValidationErrorException.fromErrors(errors);
     }

@@ -3,7 +3,6 @@ package edu.itba.exchange;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 import java.math.BigDecimal;
@@ -13,12 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import edu.itba.exchange.exceptions.CurrencyException;
-import edu.itba.exchange.interfaces.FetchExceptionMapper;
-import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.models.AvailableCurrenciesResult;
 import edu.itba.exchange.models.ConversionResult;
-import edu.itba.exchange.services.FreeCurrencyFetchExceptionMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -27,7 +22,6 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Money;
 import edu.itba.exchange.services.FreeCurrencyExchangeRateProvider;
-import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.services.UnirestFetch;
 import edu.itba.exchange.services.GsonJSON;
 
@@ -60,7 +54,7 @@ class CurrencyConverterIntegrationTest {
         final var json = new GsonJSON();
         final var fetch = new UnirestFetch(json);
 
-        final var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties, json);
+        final var provider = new FreeCurrencyExchangeRateProvider(fetch, testProperties);
 
         this.converter = new CurrencyConverter(provider);
     }

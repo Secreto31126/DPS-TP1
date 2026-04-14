@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 import edu.itba.exchange.exceptions.ApiError;
 import edu.itba.exchange.exceptions.CurrencyException;
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.models.*;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,8 @@ public class CurrencyConverter {
             return new AvailableCurrenciesResult.Success(currencies);
         } catch (final CurrencyException e) {
             return new AvailableCurrenciesResult.Failure(e.getApiError());
+        } catch (final CurrencyConnectionException e) {
+            return new AvailableCurrenciesResult.ConnectionAbort();
         }
     }
 
@@ -37,7 +40,8 @@ public class CurrencyConverter {
         return this.collectProviderResult(
                 () -> this.provider.getRate(money.currency(), to),
                 rate -> new ConversionResult.Success(money.convert(rate), rate),
-                ConversionResult.Failure::new);
+                ConversionResult.Failure::new,
+                ConversionResult.ConnectionAbort::new);
     }
 
     public ConversionResult convert(final Money money, final Currency to, final LocalDate date) {
@@ -48,7 +52,8 @@ public class CurrencyConverter {
         return this.collectProviderResult(
                 () -> this.provider.getRate(money.currency(), to, date),
                 rate -> new ConversionResult.Success(money.convert(rate), rate),
-                ConversionResult.Failure::new);
+                ConversionResult.Failure::new,
+                ConversionResult.ConnectionAbort::new);
     }
 
     public ExchangeRateResult getExchangeRate(final Currency from, final Currency to) {
@@ -59,7 +64,8 @@ public class CurrencyConverter {
         return this.collectProviderResult(
                 () -> this.provider.getRate(from, to),
                 ExchangeRateResult.Success::new,
-                ExchangeRateResult.Failure::new);
+                ExchangeRateResult.Failure::new,
+                ExchangeRateResult.ConnectionAbort::new);
     }
 
     public ExchangeRateResult getExchangeRate(final Currency from, final Currency to, final LocalDate date) {
@@ -73,15 +79,18 @@ public class CurrencyConverter {
         return this.collectProviderResult(
                 () -> this.provider.getRate(from, to, date),
                 ExchangeRateResult.Success::new,
-                ExchangeRateResult.Failure::new);
+                ExchangeRateResult.Failure::new,
+                ExchangeRateResult.ConnectionAbort::new);
     }
 
     private <E> List<E> collectProviderResult(final Supplier<List<Rate>> rates, final Function<Rate, E> ok,
-            final Function<ApiError, E> err) {
+            final Function<ApiError, E> err, final Supplier<E> conn) {
         try {
             return rates.get().stream().map(ok).toList();
         } catch (CurrencyException e) {
             return List.of(err.apply(e.getApiError()));
+        } catch (CurrencyConnectionException e) {
+            return List.of(conn.get());
         }
     }
 }
