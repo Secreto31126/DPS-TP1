@@ -243,7 +243,8 @@ class CurrencyConverterTest {
     @Test
     void shouldReturnConnectionAbortOnGetRate() {
         // Given
-        when(provider.getRate(EUR, List.of(ARS), FIXED_DATE)).thenThrow(new CurrencyConnectionException(new Exception()));
+        when(provider.getRate(EUR, List.of(ARS), FIXED_DATE))
+                .thenThrow(new CurrencyConnectionException(new Exception()));
         final var converter = new CurrencyConverter(provider);
 
         // When

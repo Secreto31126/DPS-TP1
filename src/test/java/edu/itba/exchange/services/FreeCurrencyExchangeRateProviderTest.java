@@ -81,8 +81,7 @@ class FreeCurrencyExchangeRateProviderTest {
                 2,
                 0,
                 "USD",
-                "Dollars"
-        )));
+                "Dollars")));
 
         when(responseMock.ok()).thenReturn(true);
         when(responseMock.json(any())).thenReturn(response);
@@ -106,8 +105,7 @@ class FreeCurrencyExchangeRateProviderTest {
                 2,
                 0,
                 "USD",
-                "Dollars"
-        )));
+                "Dollars")));
 
         when(responseMock.ok()).thenReturn(true);
         when(responseMock.json(any())).thenReturn(response);
@@ -251,7 +249,6 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
 
-
         assertThrows(ValidationErrorException.class, () -> provider.getRate(USD, EUR));
     }
 
@@ -259,7 +256,7 @@ class FreeCurrencyExchangeRateProviderTest {
     void testUnprocessableEntityInvalidBaseCurrency() throws FetchException {
         stubPropsAndOptions();
 
-        final var response = new ValidationErrorResponse("message", Map.of("base_currency", new String[]{}));
+        final var response = new ValidationErrorResponse("message", Map.of("base_currency", new String[] {}));
 
         when(responseMock.ok()).thenReturn(false);
         when(responseMock.json(any())).thenReturn(response);
@@ -267,7 +264,6 @@ class FreeCurrencyExchangeRateProviderTest {
         when(fetch.get(any(), any())).thenReturn(responseMock);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
-
 
         assertThrows(InvalidBaseCurrencyException.class, () -> provider.getRate(ARS, EUR));
     }
@@ -276,7 +272,7 @@ class FreeCurrencyExchangeRateProviderTest {
     void testUnprocessableEntityInvalidCurrencies() throws FetchException {
         stubPropsAndOptions();
 
-        final var response = new ValidationErrorResponse("message", Map.of("currencies", new String[]{}));
+        final var response = new ValidationErrorResponse("message", Map.of("currencies", new String[] {}));
 
         when(responseMock.ok()).thenReturn(false);
         when(responseMock.json(any())).thenReturn(response);
@@ -284,7 +280,6 @@ class FreeCurrencyExchangeRateProviderTest {
         when(fetch.get(any(), any())).thenReturn(responseMock);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
-
 
         assertThrows(InvalidCurrenciesException.class, () -> provider.getRate(USD, ARS));
     }
@@ -293,7 +288,7 @@ class FreeCurrencyExchangeRateProviderTest {
     void testUnprocessableEntityInvalidDate() throws FetchException {
         stubPropsAndOptions();
 
-        final var response = new ValidationErrorResponse("message", Map.of("date", new String[]{}));
+        final var response = new ValidationErrorResponse("message", Map.of("date", new String[] {}));
 
         when(responseMock.ok()).thenReturn(false);
         when(responseMock.json(any())).thenReturn(response);
@@ -301,7 +296,6 @@ class FreeCurrencyExchangeRateProviderTest {
         when(fetch.get(any(), any())).thenReturn(responseMock);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
-
 
         assertThrows(InvalidDateException.class, () -> provider.getRate(USD, List.of(EUR), DATE));
     }
@@ -318,7 +312,6 @@ class FreeCurrencyExchangeRateProviderTest {
         when(fetch.get(any(), any())).thenReturn(responseMock);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props);
-
 
         assertThrows(ValidationErrorException.class, () -> provider.getRate(USD, EUR));
     }
