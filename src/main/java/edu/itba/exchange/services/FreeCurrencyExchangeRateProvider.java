@@ -44,7 +44,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     }
 
     @Override
-    public List<Currency> getAvailableCurrencies(final List<String> currencyCodes) {
+    public List<Currency> getAvailableCurrencies(final List<Currency> currencyCodes) {
         final var url = this.buildCurrenciesUrl(currencyCodes);
         final ExchangeCurrenciesResponse response = this.fetchApi(url, ExchangeCurrenciesResponse.class);
 
