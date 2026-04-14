@@ -1,6 +1,5 @@
 package edu.itba.exchange.exceptions;
 
-import edu.itba.exchange.interfaces.Fetch;
 import lombok.Getter;
 
 @Getter

@@ -1,21 +1,21 @@
 package edu.itba.exchange.services;
 
-import edu.itba.exchange.interfaces.Fetch;
-import edu.itba.exchange.interfaces.HttpStatus;
-
 import java.util.Map;
 import java.util.function.Function;
 
 import edu.itba.exchange.exceptions.CurrencyException;
-import edu.itba.exchange.exceptions.FetchException;
-import edu.itba.exchange.exceptions.freecurrency.*;
+import edu.itba.exchange.exceptions.freecurrency.EndpointNotFoundException;
+import edu.itba.exchange.exceptions.freecurrency.ForbiddenException;
+import edu.itba.exchange.exceptions.freecurrency.InternalServerErrorException;
+import edu.itba.exchange.exceptions.freecurrency.InvalidCredentialsException;
+import edu.itba.exchange.exceptions.freecurrency.RateLimitException;
+import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
+import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.FetchExceptionMapper;
-import edu.itba.exchange.interfaces.JSON;
+import edu.itba.exchange.interfaces.HttpStatus;
 import edu.itba.exchange.services.dto.ValidationErrorResponse;
-import lombok.AllArgsConstructor;
 
 public class FreeCurrencyFetchExceptionMapper implements FetchExceptionMapper<CurrencyException> {
-
     private final Map<Integer, Function<Fetch.Response, CurrencyException>> mapper = Map.of(
             HttpStatus.UNAUTHORIZED, _ -> new InvalidCredentialsException(),
             HttpStatus.FORBIDDEN, _ -> new ForbiddenException(),
