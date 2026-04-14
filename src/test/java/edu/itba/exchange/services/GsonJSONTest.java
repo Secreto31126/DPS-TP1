@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 
-import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Test;
 
 class GsonJSONTest {

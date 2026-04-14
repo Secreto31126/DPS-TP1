@@ -1,12 +1,12 @@
 package edu.itba.exchange;
 
-import com.google.gson.Gson;
-
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.gson.Gson;
 
 public class ExchangeRateApiFixtures {
     private static final Gson gson = new Gson();
