@@ -9,7 +9,6 @@ import java.util.Currency;
 import org.junit.jupiter.api.Test;
 
 class RateTest {
-
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency EUR = Currency.getInstance("EUR");
 
