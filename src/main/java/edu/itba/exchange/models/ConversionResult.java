@@ -3,9 +3,9 @@ package edu.itba.exchange.models;
 import edu.itba.exchange.exceptions.ApiError;
 
 public sealed interface ConversionResult permits ConversionResult.Success, ConversionResult.Failure {
-    record Success(Money money, Rate rate) implements ConversionResult {}
+    record Success(Money money, Rate rate) implements ConversionResult {
+    }
 
-    record Failure(ApiError error) implements ConversionResult {}
+    record Failure(ApiError error) implements ConversionResult {
+    }
 }
-
-

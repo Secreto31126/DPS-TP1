@@ -4,5 +4,6 @@ public enum ApiErrorCategory {
     CLIENT_ERROR,
     SERVER_ERROR,
     NETWORK_ERROR,
+    INVALID_RESPONSE_ERROR,
     UNKNOWN_ERROR
 }

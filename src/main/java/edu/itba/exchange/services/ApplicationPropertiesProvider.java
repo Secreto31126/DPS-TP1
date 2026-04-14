@@ -7,15 +7,23 @@ import java.util.Properties;
 
 import edu.itba.exchange.interfaces.PropertiesProvider;
 
-public record ApplicationPropertiesProvider(Properties properties) implements PropertiesProvider {
-    private static final String FILE_PATH = "application.properties";
+public record ApplicationPropertiesProvider(Properties properties, String path) implements PropertiesProvider {
+    private static final String DEFAULT_FILE_PATH = "application.properties";
 
     public ApplicationPropertiesProvider {
-        try (final var in = new FileInputStream(FILE_PATH)) {
+        try (final var in = getClass().getClassLoader().getResourceAsStream(path)) {
             properties.load(in);
-        } catch (IOException e) {
-            throw new RuntimeException(FILE_PATH + " not found!");
+        } catch (final IOException | NullPointerException e) {
+            throw new IllegalStateException(path + " not found!");
         }
+    }
+
+    public ApplicationPropertiesProvider(final String path) {
+        this(new Properties(), path);
+    }
+
+    public ApplicationPropertiesProvider() {
+        this(DEFAULT_FILE_PATH);
     }
 
     @Override

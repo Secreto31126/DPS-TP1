@@ -3,6 +3,7 @@ package edu.itba.exchange;
 import com.google.gson.Gson;
 
 import java.util.Collections;
+import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,8 +41,9 @@ public class ExchangeRateApiFixtures {
      * @param codes A list of currency ISO codes.
      * @return A JSON string formatted for the /v1/currencies endpoint.
      */
-    public static String currencies(List<String> codes) {
+    public static String currencies(List<Currency> codes) {
         Map<String, Map<String, String>> data = codes.stream()
+                .map(Currency::getCurrencyCode)
                 .collect(Collectors.toMap(
                         code -> code,
                         code -> Map.of("code", code)

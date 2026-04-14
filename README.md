@@ -10,7 +10,7 @@
 
 - [x] Cómo usuario, quiero ver la cotización para una fecha pasada de una o más monedas por un cierto monto para poder visualizar el histórico de cotizaciones. e.g. (100 USD, [EUR, JPY], 2024-11-20)
 
-- [ ] Cómo usuario, quiero poder ver la cotización usada para cada moneda en la respuesta de mi solicitud de conversión, para así verificar y comparar las cotizaciones.
+- [x] Cómo usuario, quiero poder ver la cotización usada para cada moneda en la respuesta de mi solicitud de conversión, para así verificar y comparar las cotizaciones.
 
 1. getAvailableCurrencies() [Requiere definir un modelo de respuesta]
 2. se agrega el campo de rateDate [Trivial, solo modifica Rate]
