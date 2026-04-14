@@ -82,7 +82,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
             }
 
             return response.json(clazz);
-        } catch (FetchException e) {
+        } catch (final FetchException e) {
             throw new CurrencyConnectionException(e);
         }
     }
