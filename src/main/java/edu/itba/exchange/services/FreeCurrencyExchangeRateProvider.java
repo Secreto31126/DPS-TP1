@@ -78,7 +78,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
         }
 
         return response.getData().get(date).entrySet().stream()
-                .map(entry -> new Rate(from, entry.getKey(), entry.getValue()))
+                .map(entry -> new Rate(from, entry.getKey(), entry.getValue(), date))
                 .toList();
     }
 

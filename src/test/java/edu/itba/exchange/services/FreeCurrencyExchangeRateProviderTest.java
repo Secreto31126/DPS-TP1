@@ -207,6 +207,7 @@ class FreeCurrencyExchangeRateProviderTest {
         assertThat(rates, hasSize(1));
         assertThat(rates.getFirst().from(), is(USD));
         assertThat(rates.getFirst().to(), is(EUR));
+        assertThat(rates.getFirst().rateDate(), is(DATE));
         assertThat(rates.getFirst().value(), is(BigDecimal.TEN));
     }
 
