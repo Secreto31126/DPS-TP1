@@ -11,33 +11,20 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 
-import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 
 @AllArgsConstructor
 public class UnirestFetch implements Fetch {
-    private final JSON json;
+    private final JSON jsonService;
 
     @Override
-    public Fetch.Response get(final URL target, final Options options) {
+    public Fetch.Response get(final URL target, final Options options) throws FetchException {
         return this.fetchRequest(target, options, Unirest::get);
-    }
-
-    @Override
-    public <E> E getJson(URL target, Options options, Type clazz) throws FetchException {
-        options.addHeader("Accept", "application/json");
-        final var response = this.get(target, options);
-
-        if (!response.ok() || response.body().isBlank()) {
-            throw new FetchException(response.status(), response.body());
-        }
-
-        return this.json.parse(response.body(), clazz);
     }
 
     @Override
@@ -46,13 +33,13 @@ public class UnirestFetch implements Fetch {
     }
 
     private Fetch.Response fetchRequest(final URL target, final Options options,
-            final Function<String, ? extends HttpRequest> request) {
+            final Function<String, ? extends HttpRequest> request) throws FetchException {
         try {
             final var response = request.apply(target.toString()).headers(options.getHeaders());
             return new Response(response.asString());
 
         } catch (UnirestException e) {
-            throw new ExternalServiceException(ApiError.networkError(e.getMessage()), e);
+            throw new FetchException(e);
         }
     }
 
@@ -67,13 +54,22 @@ public class UnirestFetch implements Fetch {
         }
     }
 
-    public record Response(String body, int status) implements Fetch.Response {
+    @Data
+    @AllArgsConstructor
+    public class Response implements Fetch.Response {
+        private final String body;
+        private final int status;
+
         protected Response(final HttpResponse<?> response) {
             this(response.getBody().toString(), response.getStatus());
         }
 
         public boolean ok() {
             return this.status / 100 == 2;
+        }
+
+        public <E> E json(Type type) {
+            return jsonService.parse(this.body, type);
         }
     }
 }

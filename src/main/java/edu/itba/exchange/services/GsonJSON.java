@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -20,7 +21,11 @@ public class GsonJSON implements JSON {
 
     @Override
     public <E> E parse(final String in, final Type type) {
-        return GsonJSON.gson.fromJson(in, type);
+        try {
+            return GsonJSON.gson.fromJson(in, type);
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Failed to parse target input.");
+        }
     }
 
     @Override

@@ -14,19 +14,9 @@ public interface Fetch {
      * @param options The request modifiers
      * @return The response body
      */
-    Response get(final URL target, final Options options);
+    Response get(final URL target, final Options options) throws FetchException;
 
-    /**
-     * Fetch JSON from an endpoint
-     *
-     * @param <E>     The response json
-     * @param target  The url to fetch
-     * @param options The request modifiers ("Accept: application/json" is added)
-     * @param clazz   The json structure
-     * @return The json response parsed
-     * @throws FetchException on 4NN and 5NN status code responses
-     */
-    <E> E getJson(final URL target, final Options options, Type clazz) throws FetchException;
+
 
     /**
      * Provides an options object
@@ -67,14 +57,14 @@ public interface Fetch {
          *
          * @return HTTP response body
          */
-        String body();
+        String getBody();
 
         /**
          * The response status number
          *
          * @return HTTP response status
          */
-        int status();
+        int getStatus();
 
         /**
          * Checks the return status
@@ -82,5 +72,14 @@ public interface Fetch {
          * @return True if the status code is 2XX
          */
         boolean ok();
+        /**
+         * Read JSON body
+         *
+         * @param <E>     The response json
+         * @param clazz   The json structure
+         * @return The json response parsed
+         * @throws IllegalArgumentException on invalid input or type
+         */
+        <E> E json(Type clazz);
     }
 }

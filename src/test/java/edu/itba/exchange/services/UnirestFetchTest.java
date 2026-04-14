@@ -12,9 +12,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +25,6 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
 
-import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.JSON;
 
@@ -50,14 +47,11 @@ class UnirestFetchTest {
         fetch = spy(new UnirestFetch(json));
     }
 
-    // -------------------------------------------------------------------------
-    // Response tests — pure unit, no mocking
-    // -------------------------------------------------------------------------
 
     @Test
     void shouldReportOkForSuccessStatus() {
         // Given
-        final var response = new UnirestFetch.Response("body", 200);
+        final UnirestFetch.Response response = fetch.new Response("body", 200);
 
         // When / Then
         assertThat(response.ok(), is(true));
@@ -66,7 +60,7 @@ class UnirestFetchTest {
     @Test
     void shouldReportNotOkForErrorStatus() {
         // Given
-        final var response = new UnirestFetch.Response("error", 500);
+        final var response = fetch.new Response("error", 500);
 
         // When / Then
         assertThat(response.ok(), is(false));
@@ -75,7 +69,7 @@ class UnirestFetchTest {
     @Test
     void shouldReportOkForAllTwoHundredRange() {
         // Given
-        final var response = new UnirestFetch.Response("body", 299);
+        final var response = fetch.new Response("body", 299);
 
         // When / Then
         assertThat(response.ok(), is(true));
@@ -84,7 +78,7 @@ class UnirestFetchTest {
     @Test
     void shouldReportNotOkForBorderStatus() {
         // Given
-        final var response = new UnirestFetch.Response("body", 300);
+        final var response = fetch.new Response("body", 300);
 
         // When / Then
         assertThat(response.ok(), is(false));
@@ -97,17 +91,15 @@ class UnirestFetchTest {
         when(http.getStatus()).thenReturn(201);
 
         // When
-        final var response = new UnirestFetch.Response(http);
+        final var response = fetch.new Response(http);
 
         // Then
-        assertThat(response.body(), is("payload"));
-        assertThat(response.status(), is(201));
+        assertThat(response.getBody(), is("payload"));
+        assertThat(response.getStatus(), is(201));
         assertThat(response.ok(), is(true));
     }
 
-    // -------------------------------------------------------------------------
-    // UnirestOptions tests — pure unit
-    // -------------------------------------------------------------------------
+
 
     @Test
     void shouldReturnSelfOnAddHeader() {
@@ -133,54 +125,7 @@ class UnirestFetchTest {
         assertThat(options.getHeaders().get("Authorization"), is("Bearer token"));
     }
 
-    // -------------------------------------------------------------------------
-    // getJson tests — spy pattern
-    // -------------------------------------------------------------------------
 
-    @Test
-    void shouldThrowFetchExceptionWhenResponseNotOk() throws Exception {
-        // Given
-        final var url = URI.create("http://localhost").toURL();
-        final var options = fetch.getOptions();
-        final var failureResponse = new UnirestFetch.Response("{}", 500);
-        doReturn(failureResponse).when(fetch).get(eq(url), any());
-
-        // When / Then
-        assertThrows(FetchException.class, () -> fetch.getJson(url, options, Map.class));
-    }
-
-    @Test
-    void shouldThrowFetchExceptionWhenBodyIsBlank() throws Exception {
-        // Given
-        final var url = URI.create("http://localhost").toURL();
-        final var options = fetch.getOptions();
-        final var blankResponse = new UnirestFetch.Response("   ", 200);
-        doReturn(blankResponse).when(fetch).get(eq(url), any());
-
-        // When / Then
-        assertThrows(FetchException.class, () -> fetch.getJson(url, options, Map.class));
-    }
-
-    @Test
-    void shouldParseAndReturnJsonOnSuccess() throws Exception {
-        // Given
-        final var url = URI.create("http://localhost").toURL();
-        final var options = fetch.getOptions();
-        final var successResponse = new UnirestFetch.Response("{\"k\":\"v\"}", 200);
-        final var expected = Map.of("k", "v");
-        doReturn(successResponse).when(fetch).get(eq(url), any());
-        when(json.parse(eq("{\"k\":\"v\"}"), any(Type.class))).thenReturn(expected);
-
-        // When
-        final var result = fetch.getJson(url, options, Map.class);
-
-        // Then
-        assertThat(result, is(expected));
-    }
-
-    // -------------------------------------------------------------------------
-    // get() tests — mockStatic Unirest
-    // -------------------------------------------------------------------------
 
     @Test
     void shouldReturnResponseOnSuccessfulGet() throws Exception {
@@ -199,7 +144,7 @@ class UnirestFetchTest {
 
             // Then
             assertThat(response.ok(), is(true));
-            assertThat(response.body(), is("ok"));
+            assertThat(response.getBody(), is("ok"));
         }
     }
 
@@ -214,7 +159,7 @@ class UnirestFetchTest {
             when(request.asString()).thenThrow(new UnirestException("network error"));
 
             // When / Then
-            assertThrows(ExternalServiceException.class, () -> fetch.get(url, fetch.getOptions()));
+            assertThrows(FetchException.class, () -> fetch.get(url, fetch.getOptions()));
         }
     }
 }

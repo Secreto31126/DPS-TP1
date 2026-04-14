@@ -5,7 +5,6 @@ import edu.itba.exchange.interfaces.HttpStatus;
 import edu.itba.exchange.exceptions.CurrencyException;
 
 public class InternalServerErrorException extends CurrencyException {
-
     private static final String MESSAGE = "Internal Server Error.";
 
     public InternalServerErrorException() {

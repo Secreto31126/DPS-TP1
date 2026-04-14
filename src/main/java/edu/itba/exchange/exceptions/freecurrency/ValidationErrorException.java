@@ -10,7 +10,6 @@ import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException
 import java.util.Map;
 
 public class ValidationErrorException extends CurrencyException {
-
     private static final String MESSAGE = "Validation error, please check the list of validation errors.";
 
     public ValidationErrorException() {
@@ -23,10 +22,14 @@ public class ValidationErrorException extends CurrencyException {
     }
 
     public static ValidationErrorException fromErrors(Map<String, String[]> errors) {
-        if (errors == null) return new ValidationErrorException();
-        if (errors.containsKey("base_currency")) return new InvalidBaseCurrencyException();
-        if (errors.containsKey("currencies")) return new InvalidCurrenciesException();
-        if (errors.containsKey("date")) return new InvalidDateException();
+        if (errors == null)
+            return new ValidationErrorException();
+        if (errors.containsKey("base_currency"))
+            return new InvalidBaseCurrencyException();
+        if (errors.containsKey("currencies"))
+            return new InvalidCurrenciesException();
+        if (errors.containsKey("date"))
+            return new InvalidDateException();
         return new ValidationErrorException();
     }
 }

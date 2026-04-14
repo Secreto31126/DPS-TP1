@@ -8,17 +8,14 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
-import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.exceptions.ApiErrorCategory;
-import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
-import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.interfaces.PropertiesProvider;
 import edu.itba.exchange.models.Rate;
 import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
@@ -30,10 +27,10 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
     private final PropertiesProvider props;
     private final FreeCurrencyFetchExceptionMapper mapper;
 
-    public FreeCurrencyExchangeRateProvider(final Fetch fetch, final PropertiesProvider props, final JSON json) {
+    public FreeCurrencyExchangeRateProvider(final Fetch fetch, final PropertiesProvider props) {
         this.fetch = fetch;
         this.props = props;
-        this.mapper = new FreeCurrencyFetchExceptionMapper(json);
+        this.mapper = new FreeCurrencyFetchExceptionMapper();
     }
 
     @Override
@@ -78,9 +75,15 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
 
     private <T> T fetchApi(URL target, Type clazz) {
         try {
-            return this.fetch.getJson(target, this.getOptions(), clazz);
+            final var response = this.fetch.get(target, this.getOptions());
+
+            if (!response.ok()) {
+                throw this.mapper.translate(response);
+            }
+
+            return response.json(clazz);
         } catch (final FetchException e) {
-            throw this.mapper.translate(e);
+            throw new CurrencyConnectionException(e);
         }
     }
 
@@ -126,8 +129,7 @@ public class FreeCurrencyExchangeRateProvider implements ExchangeRateProvider {
                     .setParameters(filteredQuery)
                     .build().toURL();
         } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ExternalServiceException(
-                    new ApiError(ApiErrorCategory.CLIENT_ERROR, "Internal error building API URL"), e);
+            throw new CurrencyConnectionException(e);
         }
     }
 
