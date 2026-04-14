@@ -18,10 +18,16 @@ import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 
-import edu.itba.exchange.exceptions.CurrencyNotFoundException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import edu.itba.exchange.exceptions.ExternalServiceException;
 import edu.itba.exchange.exceptions.FetchException;
 import edu.itba.exchange.exceptions.freecurrency.InternalServerErrorException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.interfaces.PropertiesProvider;
@@ -29,18 +35,17 @@ import edu.itba.exchange.models.Rate;
 import edu.itba.exchange.services.dto.ExchangeCurrenciesResponse;
 import edu.itba.exchange.services.dto.ExchangeRateResponse;
 import edu.itba.exchange.services.dto.HistoricalExchangeRateResponse;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import edu.itba.exchange.services.dto.ValidationErrorResponse;
 
 @ExtendWith(MockitoExtension.class)
 class FreeCurrencyExchangeRateProviderTest {
-
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency GBP = Currency.getInstance("GBP");
+    private static final Currency ARS = Currency.getInstance("ARS");
+
     private static final LocalDate DATE = LocalDate.parse("2024-01-01");
+
     private static final String BASE_URL = "http://localhost";
     private static final String API_TOKEN = "test-token";
 
@@ -72,7 +77,8 @@ class FreeCurrencyExchangeRateProviderTest {
         final var response = new ExchangeCurrenciesResponse();
         response.setData(Map.of("USD", new ExchangeCurrenciesResponse.ExchangeCurrencyData(
                 "$", "Dollar", "$", 2, 0, "USD", "Dollars")));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(), eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(),
+                eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -91,12 +97,13 @@ class FreeCurrencyExchangeRateProviderTest {
         final var response = new ExchangeCurrenciesResponse();
         response.setData(Map.of("USD", new ExchangeCurrenciesResponse.ExchangeCurrencyData(
                 "$", "Dollar", "$", 2, 0, "USD", "Dollars")));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(), eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(),
+                eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
         // When
-        final var result = provider.getAvailableCurrencies(List.of("USD"));
+        final var result = provider.getAvailableCurrencies(List.of(USD));
 
         // Then
         assertThat(result, is(List.of(USD)));
@@ -109,7 +116,8 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var response = new ExchangeCurrenciesResponse();
         response.setData(Map.of());
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(), eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/currencies")), any(),
+                eq(ExchangeCurrenciesResponse.class))).thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -129,7 +137,8 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var response = new ExchangeRateResponse();
         response.setData(Map.of("EUR", BigDecimal.TEN));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class)))
+                .thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -143,13 +152,31 @@ class FreeCurrencyExchangeRateProviderTest {
     }
 
     @Test
+    void shouldThrowIfRateNotFound() throws FetchException {
+        // Given
+        stubPropsAndOptions();
+
+        final var body = "GSON";
+        when(json.parse(eq(body), eq(ValidationErrorResponse.class)))
+                .thenReturn(new ValidationErrorResponse("err", Map.of("currencies", new String[] { "ARS" })));
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class)))
+                .thenThrow(new FetchException(422, body));
+
+        final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
+
+        // When / Then
+        assertThrows(InvalidCurrenciesException.class, () -> provider.getRate(USD, ARS));
+    }
+
+    @Test
     void shouldGetRateForMultipleCurrencies() throws FetchException {
         // Given
         stubPropsAndOptions();
 
         final var response = new ExchangeRateResponse();
         response.setData(Map.of("EUR", BigDecimal.TEN, "GBP", BigDecimal.TWO));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class)))
+                .thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -164,8 +191,10 @@ class FreeCurrencyExchangeRateProviderTest {
 
         rates.forEach(rate -> {
             assertThat(rate.from(), is(USD));
-            if (rate.to().equals(EUR)) assertThat(rate.value(), is(BigDecimal.TEN));
-            else assertThat(rate.value(), is(BigDecimal.TWO));
+            if (rate.to().equals(EUR))
+                assertThat(rate.value(), is(BigDecimal.TEN));
+            else
+                assertThat(rate.value(), is(BigDecimal.TWO));
         });
     }
 
@@ -176,7 +205,8 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var response = new ExchangeRateResponse();
         response.setData(Map.of());
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/latest")), any(), eq(ExchangeRateResponse.class)))
+                .thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -196,7 +226,8 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var response = new HistoricalExchangeRateResponse();
         response.setData(Map.of(DATE, Map.of(EUR, BigDecimal.TEN)));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/historical")), any(), eq(HistoricalExchangeRateResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/historical")), any(),
+                eq(HistoricalExchangeRateResponse.class))).thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -218,7 +249,8 @@ class FreeCurrencyExchangeRateProviderTest {
 
         final var response = new HistoricalExchangeRateResponse();
         response.setData(Map.of(DATE, Map.of(EUR, BigDecimal.TEN, GBP, BigDecimal.TWO)));
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/historical")), any(), eq(HistoricalExchangeRateResponse.class))).thenReturn(response);
+        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/historical")), any(),
+                eq(HistoricalExchangeRateResponse.class))).thenReturn(response);
 
         final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
 
@@ -232,21 +264,6 @@ class FreeCurrencyExchangeRateProviderTest {
         assertThat(currencies, containsInAnyOrder(EUR, GBP));
 
         rates.forEach(rate -> assertThat(rate.from(), is(USD)));
-    }
-
-    @Test
-    void shouldThrowCurrencyNotFoundWhenHistoricalDateMissing() throws FetchException {
-        // Given
-        stubPropsAndOptions();
-
-        final var response = new HistoricalExchangeRateResponse();
-        response.setData(Map.of());
-        when(fetch.getJson(argThat(url -> url.getPath().contains("/v1/historical")), any(), eq(HistoricalExchangeRateResponse.class))).thenReturn(response);
-
-        final var provider = new FreeCurrencyExchangeRateProvider(fetch, props, json);
-
-        // When / Then
-        assertThrows(CurrencyNotFoundException.class, () -> provider.getRate(USD, List.of(EUR), DATE));
     }
 
     // --- Error handling ---

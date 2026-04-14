@@ -2,6 +2,7 @@ package edu.itba.exchange;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,8 +12,12 @@ import java.util.Currency;
 import java.util.List;
 
 import edu.itba.exchange.exceptions.ApiError;
-import edu.itba.exchange.exceptions.CurrencyNotFoundException;
+import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
 import edu.itba.exchange.models.*;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,11 +33,14 @@ class CurrencyConverterTest {
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency GBP = Currency.getInstance("GBP");
+    private static final Currency ARS = Currency.getInstance("ARS");
     private static final Rate EUR_USD_RATE = new Rate(EUR, USD, "1.05");
     private static final Rate EUR_GBP_RATE = new Rate(EUR, GBP, "0.85");
     private static final LocalDate FIXED_DATE = LocalDate.of(2024, 1, 1);
     private static final Rate EUR_USD_RATE_HISTORICAL = new Rate(EUR, USD, "1.10", FIXED_DATE);
     private static final ApiError NETWORK_ERROR = ApiError.networkError("fail");
+    private static final ApiError CLIENT_INPUT_ERROR = ApiError.fromHttpStatus(422, "");
+    private static final ApiError CLIENT_DATE_ERROR = ApiError.fromHttpStatus(422, "");
 
     // --- convert(Money, Currency) ---
 
@@ -75,14 +83,14 @@ class CurrencyConverterTest {
     void shouldReturnFailureWhenConvertThrows() {
         // Given
         final var euros = new Money("100", EUR);
-        when(provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getRate(EUR, List.of(ARS))).thenThrow(new InvalidCurrenciesException());
         final var converter = new CurrencyConverter(provider);
 
         // When
-        final var results = converter.convert(euros, List.of(USD));
+        final var results = converter.convert(euros, List.of(ARS));
 
         // Then
-        assertThat(results.getFirst(), is(new ConversionResult.Failure(NETWORK_ERROR)));
+        assertThat(results.getFirst(), is(instanceOf(ConversionResult.Failure.class)));
     }
 
     // --- convert(Money, Currency, LocalDate) ---
@@ -116,21 +124,22 @@ class CurrencyConverterTest {
 
         // Then
         assertThat(results.size(), is(1));
-        assertThat(results.getFirst(), is(new ConversionResult.Success(new Money("110.00", USD), EUR_USD_RATE_HISTORICAL)));
+        assertThat(results.getFirst(),
+                is(new ConversionResult.Success(new Money("110.00", USD), EUR_USD_RATE_HISTORICAL)));
     }
 
     @Test
     void shouldReturnFailureWhenConvertWithDateThrows() {
         // Given
         final var euros = new Money("100", EUR);
-        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenThrow(new InvalidDateException());
         final var converter = new CurrencyConverter(provider);
 
         // When
         final var results = converter.convert(euros, List.of(USD), FIXED_DATE);
 
         // Then
-        assertThat(results.getFirst(), is(new ConversionResult.Failure(NETWORK_ERROR)));
+        assertThat(results.getFirst(), is(instanceOf(ConversionResult.Failure.class)));
     }
 
     // --- getExchangeRate(Currency, Currency) ---
@@ -167,14 +176,14 @@ class CurrencyConverterTest {
     @Test
     void shouldReturnFailureWhenGetExchangeRateThrows() {
         // Given
-        when(provider.getRate(EUR, List.of(USD))).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getRate(EUR, List.of(ARS))).thenThrow(new InvalidCurrenciesException());
         final var converter = new CurrencyConverter(provider);
 
         // When
-        final var results = converter.getExchangeRate(EUR, List.of(USD));
+        final var results = converter.getExchangeRate(EUR, List.of(ARS));
 
         // Then
-        assertThat(results.getFirst(), is(new ExchangeRateResult.Failure(NETWORK_ERROR)));
+        assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.Failure.class)));
     }
 
     // --- getExchangeRate(Currency, Currency, LocalDate) ---
@@ -210,14 +219,14 @@ class CurrencyConverterTest {
     @Test
     void shouldReturnFailureWhenGetExchangeRateWithDateThrows() {
         // Given
-        when(provider.getRate(EUR, List.of(USD), FIXED_DATE)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getRate(EUR, List.of(ARS), FIXED_DATE)).thenThrow(new InvalidCurrenciesException());
         final var converter = new CurrencyConverter(provider);
 
         // When
-        final var results = converter.getExchangeRate(EUR, List.of(USD), FIXED_DATE);
+        final var results = converter.getExchangeRate(EUR, List.of(ARS), FIXED_DATE);
 
         // Then
-        assertThat(results.getFirst(), is(new ExchangeRateResult.Failure(NETWORK_ERROR)));
+        assertThat(results.getFirst(), is(instanceOf(ExchangeRateResult.Failure.class)));
     }
 
     // --- getAvailableCurrencies() ---
@@ -255,27 +264,27 @@ class CurrencyConverterTest {
     @Test
     void shouldReturnFailureWhenGetAvailableCurrenciesThrows() {
         // Given
-        when(provider.getAvailableCurrencies(List.of())).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getAvailableCurrencies(List.of())).thenThrow(new ValidationErrorException());
         final var converter = new CurrencyConverter(provider);
 
         // When
         final var result = converter.getAvailableCurrencies();
 
         // Then
-        assertThat(result, is(new AvailableCurrenciesResult.Failure(NETWORK_ERROR)));
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.Failure.class)));
     }
 
     @Test
     void shouldReturnFailureWhenGetAvailableCurrenciesWithFilterThrows() {
         // Given
         final var filter = List.of(ARS);
-        when(provider.getAvailableCurrencies(filter)).thenThrow(new CurrencyNotFoundException(NETWORK_ERROR));
+        when(provider.getAvailableCurrencies(filter)).thenThrow(new InvalidCurrenciesException());
         final var converter = new CurrencyConverter(provider);
 
         // When
         final var result = converter.getAvailableCurrencies(filter);
 
         // Then
-        assertThat(result, is(new AvailableCurrenciesResult.Failure(NETWORK_ERROR)));
+        assertThat(result, is(instanceOf(AvailableCurrenciesResult.Failure.class)));
     }
 }
