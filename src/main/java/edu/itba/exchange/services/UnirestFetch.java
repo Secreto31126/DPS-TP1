@@ -27,8 +27,6 @@ public class UnirestFetch implements Fetch {
         return this.fetchRequest(target, options, Unirest::get);
     }
 
-
-
     @Override
     public Fetch.Options getOptions() {
         return new UnirestOptions();
@@ -55,11 +53,13 @@ public class UnirestFetch implements Fetch {
             return this;
         }
     }
+
     @Data
     @AllArgsConstructor
     public class Response implements Fetch.Response {
         private final String body;
         private final int status;
+
         protected Response(final HttpResponse<?> response) {
             this(response.getBody().toString(), response.getStatus());
         }

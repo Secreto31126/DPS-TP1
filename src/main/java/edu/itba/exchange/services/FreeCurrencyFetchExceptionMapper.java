@@ -24,7 +24,7 @@ public class FreeCurrencyFetchExceptionMapper implements FetchExceptionMapper<Cu
             HttpStatus.TOO_MANY_REQUESTS, _ -> new RateLimitException());
 
     @Override
-    public CurrencyException translate(Fetch.Response response) {
+    public CurrencyException translate(final Fetch.Response response) {
         final var status = response.getStatus();
         return mapper.getOrDefault(status, _ -> new InternalServerErrorException()).apply(response);
     }

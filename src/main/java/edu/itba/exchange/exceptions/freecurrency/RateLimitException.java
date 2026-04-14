@@ -5,7 +5,6 @@ import edu.itba.exchange.interfaces.HttpStatus;
 import edu.itba.exchange.exceptions.CurrencyException;
 
 public class RateLimitException extends CurrencyException {
-
     private static final String MESSAGE = "You have hit your rate limit or your monthly limit. For more requests please upgrade your plan.";
 
     public RateLimitException() {

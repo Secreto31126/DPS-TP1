@@ -4,8 +4,7 @@ import lombok.Getter;
 
 @Getter
 public class FetchException extends Exception {
-
-    public FetchException(Throwable e) {
+    public FetchException(final Throwable e) {
         super(e);
     }
 }
