@@ -8,12 +8,12 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
-import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
 import edu.itba.exchange.exceptions.FetchException;
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
 import edu.itba.exchange.interfaces.ExchangeRateProvider;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.PropertiesProvider;

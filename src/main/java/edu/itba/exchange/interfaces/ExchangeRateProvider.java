@@ -3,6 +3,7 @@ package edu.itba.exchange.interfaces;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
+
 import edu.itba.exchange.models.Rate;
 
 public interface ExchangeRateProvider {

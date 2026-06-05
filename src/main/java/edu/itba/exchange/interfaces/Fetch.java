@@ -1,10 +1,10 @@
 package edu.itba.exchange.interfaces;
 
-import edu.itba.exchange.exceptions.FetchException;
-
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Map;
+
+import edu.itba.exchange.exceptions.FetchException;
 
 public interface Fetch {
     /**

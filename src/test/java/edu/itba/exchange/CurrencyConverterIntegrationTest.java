@@ -1,9 +1,13 @@
 package edu.itba.exchange;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,19 +15,20 @@ import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import edu.itba.exchange.models.AvailableCurrenciesResult;
-import edu.itba.exchange.models.ConversionResult;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
 import edu.itba.exchange.interfaces.PropertiesProvider;
+import edu.itba.exchange.models.AvailableCurrenciesResult;
+import edu.itba.exchange.models.ConversionResult;
 import edu.itba.exchange.models.Money;
 import edu.itba.exchange.services.FreeCurrencyExchangeRateProvider;
-import edu.itba.exchange.services.UnirestFetch;
 import edu.itba.exchange.services.GsonJSON;
+import edu.itba.exchange.services.UnirestFetch;
 
 class CurrencyConverterIntegrationTest {
     @RegisterExtension

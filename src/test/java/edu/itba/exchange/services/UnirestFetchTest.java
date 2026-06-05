@@ -4,10 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -46,7 +43,6 @@ class UnirestFetchTest {
     void setUp() {
         fetch = spy(new UnirestFetch(json));
     }
-
 
     @Test
     void shouldReportOkForSuccessStatus() {
@@ -99,8 +95,6 @@ class UnirestFetchTest {
         assertThat(response.ok(), is(true));
     }
 
-
-
     @Test
     void shouldReturnSelfOnAddHeader() {
         // Given
@@ -124,8 +118,6 @@ class UnirestFetchTest {
         // Then
         assertThat(options.getHeaders().get("Authorization"), is("Bearer token"));
     }
-
-
 
     @Test
     void shouldReturnResponseOnSuccessfulGet() throws Exception {

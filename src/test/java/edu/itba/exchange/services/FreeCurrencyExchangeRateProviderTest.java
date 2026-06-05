@@ -16,16 +16,21 @@ import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 
-import edu.itba.exchange.exceptions.freecurrency.*;
-import edu.itba.exchange.exceptions.freecurrency.validation.InvalidBaseCurrencyException;
-import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
-import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import edu.itba.exchange.exceptions.FetchException;
+import edu.itba.exchange.exceptions.freecurrency.CurrencyConnectionException;
+import edu.itba.exchange.exceptions.freecurrency.EndpointNotFoundException;
+import edu.itba.exchange.exceptions.freecurrency.ForbiddenException;
+import edu.itba.exchange.exceptions.freecurrency.InvalidCredentialsException;
+import edu.itba.exchange.exceptions.freecurrency.RateLimitException;
+import edu.itba.exchange.exceptions.freecurrency.ValidationErrorException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidBaseCurrencyException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidCurrenciesException;
+import edu.itba.exchange.exceptions.freecurrency.validation.InvalidDateException;
 import edu.itba.exchange.interfaces.Fetch;
 import edu.itba.exchange.interfaces.JSON;
 import edu.itba.exchange.interfaces.PropertiesProvider;
